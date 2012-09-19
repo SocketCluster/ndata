@@ -1,7 +1,8 @@
 nData
 ======
 
-nData is a key-value store server.
+nData is a lightweight key-value store server.
+It is written entirely in node.js for maximum portability.
 
 To use it call:
 var ndata = require('ndata');
