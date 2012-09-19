@@ -23,8 +23,8 @@ var dataClient = ndata.createClient(port, secretKey);
 The port and secret key must match those supplied to the createServer function.
 
 The client exposes the following methods:
-* Please see the section on keys (below) to see how you can use keys in nData.
-Also, note that the callback argument in all of the following cases is optional.
+(Please see the section on keys (below) to see how you can use keys in nData.
+Also, note that the callback argument in all of the following cases is optional.)
 
 - set(key, value, callback) - Set a key-value pair, when the operation has been completed, callback will be executed.
 The callback is in form: callback(err)
