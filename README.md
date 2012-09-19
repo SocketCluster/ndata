@@ -58,7 +58,7 @@ If event is not specified, it will remove all nData events.
 
 ## Keys
 
-nData is very flexible with how you can use keys. In general it lets you set key chains of any dimension without having to manually create each link in the chain.
+nData is very flexible with how you can use keys. It lets you set key chains of any dimension without having to manually create each link in the chain.
 For example, when you start, nData will be empty, but this expression is perfectly valid:
 dataClient.set('this.is.a.deep.key', 'Hello world');
 
