@@ -4,6 +4,12 @@ nData
 nData is a lightweight key-value store server.
 It is written entirely in node.js for maximum portability.
 
+## Installation
+
+npm install ndata
+
+## Overview
+
 To use it call:
 var ndata = require('ndata');
 
