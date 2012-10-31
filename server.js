@@ -195,17 +195,21 @@ var FlexiMap = function(object) {
 		var isArray = (self._data.length > 0) ? true : false;
 		var i;
 		
+		var data = [];
+		
 		for(i in self._data) {
 			if(self._data[i] instanceof FlexiMap) {
-				self._data[i] = self._data[i].getData();
+				data[i] = self._data[i].getData();
+			} else {
+				data[i] = self._data[i];
 			}
 		}
 		
 		if(isArray) {
-			var len = self._data.length;
+			var len = data.length;
 			
 			for(i=0; i<len; i++) {
-				if(self._data[i] === undefined) {
+				if(data[i] === undefined) {
 					isArray = false;
 					break;
 				}
@@ -213,7 +217,7 @@ var FlexiMap = function(object) {
 		}
 		
 		if(isArray) {
-			for(i in self._data) {
+			for(i in data) {
 				if(!self._isInt(i)) {
 					isArray = false;
 					break;
@@ -222,10 +226,10 @@ var FlexiMap = function(object) {
 		}
 		
 		if(isArray) {
-			return self._data;
+			return data;
 		}
 		
-		return self._arrayToObject(self._data);
+		return self._arrayToObject(data);
 	}
 }
 
