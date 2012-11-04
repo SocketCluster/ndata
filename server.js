@@ -138,6 +138,30 @@ var FlexiMap = function(object) {
 		}
 	}
 	
+	self.update = function(keyPath, expression) {
+		var curValue = self.get(keyPath);
+		var matches = expression.match(/{{[^{}]*}}/g);
+		
+		var subsMap = {};
+		var i, curSel, curSelVal, newValue;
+		for(i in matches) {
+			curSel = matches[i].slice(2, -2);
+			curSelVal = self.get(curSel);
+			
+			subsMap[matches[i]] = curSelVal;
+		}
+		
+		var newExpr = expression;
+		for(i in subsMap) {
+			newExpr = expression.replace(new RegExp(i, 'g'), subsMap[i]);
+		}
+		
+		newValue = (Function("return " + newExpr + ';'))();
+		self.set(keyPath, newValue);
+		
+		return newValue;
+	}
+	
 	self._remove = function(key) {
 		if(self.hasImmediateKey(key)) {
 			var data = self._getValue(key);
@@ -259,6 +283,18 @@ var actions = {
 		send(socket, {id: command.id, type: 'response', action: 'add'});
 	},
 	
+	update: function(command, socket) {
+		try {
+			var result = dataMap.update(command.key, command.value);
+			send(socket, {id: command.id, type: 'response', action: 'update', value: result});
+		} catch(e) {
+			if(e instanceof Error) {
+				e = e.toString();
+			}
+			send(socket, {id: command.id, type: 'response', action: 'update', value: null, error: e});
+		}
+	},
+	
 	remove: function(command, socket) {
 		var result = dataMap.remove(command.key);
 		send(socket, {id: command.id, type: 'response', action: 'remove', value: result});
@@ -331,13 +367,41 @@ var server = com.createServer();
 
 server.listen(PORT, HOST);
 
+var escapeDots = function(str) {
+	return str.replace(/[.]/g, '\u001a');
+}
+
+var escapeGroups = function(str) {
+	return str.replace(/\[\[[^\[\]]*\]\]/g, function(match) {
+		return escapeDots(match).slice(2,-2);
+	});
+}
+
+var subKeyChains = function() {
+	var newStr = str.replace(/{{[^{}]*}}/g, function(match) {
+		return dataMap.get(match.slice(2,-2));
+	});
+	return (Function("return " + newStr + ';'))();
+}
+
 server.on('connection', function(sock) {
 	sock.id = genID();
 	
-	sock.on('message', function(command) {
+	sock.on('message', function(command) {	
 		if(!SECRET_KEY || initialized.hasOwnProperty(sock.id) || command.action == 'init') {
-			if(actions.hasOwnProperty(command.action)) {
-				actions[command.action](command, sock);
+			if(!command.key || typeof command.key == 'string') {
+				if(command.key) {
+					command.key = subKeyChains(escapeGroups(command.key));
+				}
+				if(command.value && typeof command.value == 'string') {
+					command.value = subKeyChains(escapeGroups(command.value));
+				}
+				
+				if(actions.hasOwnProperty(command.action)) {
+					actions[command.action](command, sock);
+				}
+			} else {
+				send(sock, {id: command.id, type: 'response', action: command.action, error: 'nData Error - The specified key was not a string'});
 			}
 		} else {
 			send(sock, {id: command.id, type: 'response', action: command.action, error: 'nData Error - Cannot process command before init handshake'});

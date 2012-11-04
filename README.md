@@ -8,6 +8,12 @@ It is written entirely in node.js for maximum portability.
 
 npm install ndata
 
+## Recent Updates
+
+Support was added for JavaScript queries which allow you to directly manipulate the DataMap. nData may be the first NoSQL data store to use JavaScript as a querying language.
+This functionality allows you to execute sniplets of JavaScript directly on the nData server. Using this technique, DataMap methods can be called synchronously
+in one atomic operation and a single value can be returned when all has been processed.
+
 ## Overview
 
 To use it call:

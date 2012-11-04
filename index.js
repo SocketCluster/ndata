@@ -44,7 +44,7 @@ var Client = function(port, host, secretKey, timeout) {
 	self._chanelWatchers = {};
 	self._commandMap = {};
 	
-	self._socket = new ComSocket();//new net.Socket();
+	self._socket = new ComSocket();
 	
 	self._curID = 1;
 	self.MAX_ID = Math.pow(2, 53) - 2;
@@ -184,6 +184,10 @@ var Client = function(port, host, secretKey, timeout) {
 			self.on('unwatch', handler);
 			self.on('unwatchfail', handler);
 		}
+	}
+	
+	self.escapeDots = function(str) {
+		return str.replace(/[.]/g, '\u001a');
 	}
 	
 	self.watch = function(event, handler, ackCallback) {
@@ -346,6 +350,15 @@ var Client = function(port, host, secretKey, timeout) {
 			action: 'add',
 			key: key,
 			value: value
+		}
+		self._exec(command, callback);
+	}
+	
+	self.update = function(key, expression, callback) {
+		var command = {
+			action: 'update',
+			key: key,
+			value: expression
 		}
 		self._exec(command, callback);
 	}

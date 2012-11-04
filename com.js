@@ -4,7 +4,8 @@ var formatter = require('./formatter');
 var ComSocket = function(netSocket) {
 	var self = this;
 	var dataBuffer = '';
-	var endSymbol = '~λιφρ~';
+	var endSymbol = '\u0017';
+	var endSymbolRegex = new RegExp(endSymbol, 'g');
 	var socket = null;
 	
 	if(netSocket) {
@@ -43,7 +44,7 @@ var ComSocket = function(netSocket) {
 	}
 	
 	self.write = function(data) {
-		socket.write(formatter.stringify(data) + endSymbol);
+		socket.write(formatter.stringify(data).replace(endSymbolRegex, '') + endSymbol);
 	}
 }
 
