@@ -370,10 +370,13 @@ var Client = function(port, host, secretKey, timeout) {
 	}
 	
 	self.run = function(code, callback) {
+		code = code.replace(/[\t ]+/g, ' ');
+		
 		var command = {
 			action: 'run',
 			value: code
 		}
+		
 		self._exec(command, callback);
 	}
 	
