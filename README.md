@@ -23,7 +23,7 @@ The secretKey argument is optional; you should use it if you want to restrict ac
 If you're running a node cluster, you may want to use a random key and distribute it to all the workers so that only
 your application can interact with the nData server.
 
-Once the server is setup, you should create clients to interact with it.
+Once the server is setup, you should create clients to interact with it. *Make sure that the server is running before creating clients; listen for the 'ready' event on the server*
 To create a client use:
 var dataClient = ndata.createClient(port, secretKey);
 
