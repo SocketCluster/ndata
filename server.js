@@ -6,8 +6,14 @@ var initialized = {};
 
 var com = require('./com');
 
+var unflatten = function(str) {
+	return str.replace(/\\u001a/g, '.');
+}
+
+var filters = [unflatten];
+
 var send = function(socket, object) {
-	socket.write(object);
+	socket.write(object, filters);
 }
 
 var isEmpty = function(object) {
@@ -122,6 +128,7 @@ var FlexiMap = function(object) {
 	self.set = function(keyPath, value) {
 		var keyChain = keyPath.split('.');
 		self._set(keyChain, value);
+		return value;
 	}
 	
 	self.add = function(keyPath, value) {
@@ -136,30 +143,11 @@ var FlexiMap = function(object) {
 		} else {
 			self.set(keyPath + '.' + target.getLength(), value);
 		}
+		return value;
 	}
 	
-	self.update = function(keyPath, expression) {
-		var curValue = self.get(keyPath);
-		var matches = expression.match(/{{[^{}]*}}/g);
-		
-		var subsMap = {};
-		var i, curSel, curSelVal, newValue;
-		for(i in matches) {
-			curSel = matches[i].slice(2, -2);
-			curSelVal = self.get(curSel);
-			
-			subsMap[matches[i]] = curSelVal;
-		}
-		
-		var newExpr = expression;
-		for(i in subsMap) {
-			newExpr = expression.replace(new RegExp(i, 'g'), subsMap[i]);
-		}
-		
-		newValue = (Function("return " + newExpr + ';'))();
-		self.set(keyPath, newValue);
-		
-		return newValue;
+	self.run = function(code) {
+		return Function('var DataMap = arguments[0]; return ' + code + ' || "";')(self);
 	}
 	
 	self._remove = function(key) {
@@ -257,7 +245,7 @@ var FlexiMap = function(object) {
 	}
 }
 
-var dataMap = new FlexiMap();
+var DataMap = new FlexiMap();
 var watchMap = {};
 
 var actions = {
@@ -274,18 +262,23 @@ var actions = {
 	},
 
 	set: function(command, socket) {
-		dataMap.set(command.key, command.value);
-		send(socket, {id: command.id, type: 'response', action: 'set'});
+		var result = DataMap.set(command.key, command.value);
+		send(socket, {id: command.id, type: 'response', action: 'set', value: result});
 	},
 	
 	add: function(command, socket) {
-		dataMap.add(command.key, command.value);
-		send(socket, {id: command.id, type: 'response', action: 'add'});
+		var result = DataMap.add(command.key, command.value);
+		send(socket, {id: command.id, type: 'response', action: 'add', value: result});
+	},
+	
+	run: function(command, socket) {
+		var result = DataMap.run(command.value);
+		send(socket, {id: command.id, type: 'response', action: 'run', value: result});
 	},
 	
 	update: function(command, socket) {
 		try {
-			var result = dataMap.update(command.key, command.value);
+			var result = DataMap.update(command.key, command.value);
 			send(socket, {id: command.id, type: 'response', action: 'update', value: result});
 		} catch(e) {
 			if(e instanceof Error) {
@@ -296,22 +289,22 @@ var actions = {
 	},
 	
 	remove: function(command, socket) {
-		var result = dataMap.remove(command.key);
+		var result = DataMap.remove(command.key);
 		send(socket, {id: command.id, type: 'response', action: 'remove', value: result});
 	},
 	
 	removeAll: function(command, socket) {
-		dataMap.removeAll();
+		DataMap.removeAll();
 		send(socket, {id: command.id, type: 'response', action: 'removeAll'});
 	},
 	
 	pop: function(command, socket) {
-		var result = dataMap.pop(command.key);
+		var result = DataMap.pop(command.key);
 		send(socket, {id: command.id, type: 'response', action: 'pop', value: result});
 	},
 	
 	get: function(command, socket) {
-		var result = dataMap.get(command.key);
+		var result = DataMap.get(command.key);
 		if(result instanceof FlexiMap) {
 			result = result.getData();
 		}
@@ -319,7 +312,7 @@ var actions = {
 	},
 	
 	getAll: function(command, socket) {
-		send(socket, {id: command.id, type: 'response', action: 'getAll', value: dataMap.getData()});
+		send(socket, {id: command.id, type: 'response', action: 'getAll', value: DataMap.getData()});
 	},
 	
 	watch: function(command, socket) {
@@ -346,6 +339,11 @@ var actions = {
 		}
 	},
 	
+	isWatching: function(command, socket) {
+		var result = watchMap.hasOwnProperty(command.event) && watchMap[command.event].hasOwnProperty(socket.id);
+		send(socket, {id: command.id, type: 'response', action: 'isWatching', event: command.event});
+	},
+	
 	broadcast: function(command, socket) {
 		if(watchMap[command.event]) {
 			var i;
@@ -367,44 +365,134 @@ var server = com.createServer();
 
 server.listen(PORT, HOST);
 
-var escapeDots = function(str) {
-	return str.replace(/[.]/g, '\u001a');
+var flatten = function(str) {
+	return str.replace(/[.]/g, '\\u001a');
 }
 
-var escapeGroups = function(str) {
-	return str.replace(/\[\[[^\[\]]*\]\]/g, function(match) {
-		return escapeDots(match).slice(2,-2);
-	});
+var substitute = function(str) {
+	return DataMap.get(str);
 }
 
-var subKeyChains = function() {
-	var newStr = str.replace(/{{[^{}]*}}/g, function(match) {
-		return dataMap.get(match.slice(2,-2));
-	});
-	return (Function("return " + newStr + ';'))();
+var evaluate = function(str) {
+	return Function('return ' + str + ' || null;')();
 }
+
+var convertToString = function(object) {
+	var str;
+	if(typeof object == 'string') {
+		str = object;
+	} else if(object == null) {
+		str = null;
+	} else if(object == undefined) {
+		str = object;
+	} else {
+		str = object.toString();
+	}
+	return str;
+}
+
+var arrayToString = function(array) {
+	if(array.length == 1) {
+		return convertToString(array[0]);
+	}
+	var i;
+	var str = '';
+	for(i in array) {
+		str += convertToString(array[i]);
+	}
+	return str;
+}
+
+var compile = function(str, macroMap, macroName) {
+	var buffer = [];
+	var chars;
+	if(typeof str == 'string') {
+		chars = str.split('');
+	} else {
+		chars = str;
+	}
+	var len = chars.length;
+	
+	var curMacroChar;
+	var i;
+	for(i=0; i<len; i++) {
+		if(macroMap.hasOwnProperty(chars[i]) && chars[i + 1] == '(' && chars[i - 1] != '\\') {
+			curMacroChar = chars[i];
+			i += 2;
+			var segment = [];
+			var j;
+			var numOpen = 1;
+			for(j=i; j<len; j++) {
+				if(chars[j] == '(' && chars[j - 1] != '\\') {
+					numOpen++;
+				} else if(chars[j] == ')' && chars[j - 1] != '\\') {
+					numOpen--;
+				}
+				
+				if(numOpen > 0) {
+					segment.push(chars[j]);
+				} else {
+					break;
+				}
+			}
+			i = j;
+			var comp = compile(segment, macroMap, curMacroChar);
+			buffer.push(comp);
+		} else {
+			buffer.push(chars[i]);
+		}
+	}
+	if(macroName) {
+		return macroMap[macroName](arrayToString(buffer));
+	} else {
+		return arrayToString(buffer);
+	}
+}
+
+var macros = {
+	'!': evaluate,
+	'$': substitute,
+	'#': flatten
+};
 
 server.on('connection', function(sock) {
 	sock.id = genID();
 	
-	sock.on('message', function(command) {	
+	sock.on('message', function(command) {
 		if(!SECRET_KEY || initialized.hasOwnProperty(sock.id) || command.action == 'init') {
-			if(!command.key || typeof command.key == 'string') {
-				if(command.key) {
-					command.key = subKeyChains(escapeGroups(command.key));
+			try {
+				if(!command.key || typeof command.key == 'string') {
+					if(command.key) {
+						command.key = compile(command.key, macros);
+					}
+					if(command.value && typeof command.value == 'string') {
+						command.value = compile(command.value, macros);
+					}
+					
+					if(actions.hasOwnProperty(command.action)) {
+						actions[command.action](command, sock);
+					}
+				} else {
+					send(sock, {id: command.id, type: 'response', action: command.action, error: 'nData Error - The specified key was not a string'});
 				}
-				if(command.value && typeof command.value == 'string') {
-					command.value = subKeyChains(escapeGroups(command.value));
+			
+			} catch(e) {
+				if(e.stack) {
+					console.log(e.stack);
+				} else {
+					console.log(e);
+				}
+				if(e instanceof Error) {
+					e = e.toString();
 				}
 				
-				if(actions.hasOwnProperty(command.action)) {
-					actions[command.action](command, sock);
-				}
-			} else {
-				send(sock, {id: command.id, type: 'response', action: command.action, error: 'nData Error - The specified key was not a string'});
+				send(sock, {id: command.id, type: 'response', action:  command.action, error: 'nData Error - Failed to process command due to the following error: ' + e});
 			}
+			
 		} else {
-			send(sock, {id: command.id, type: 'response', action: command.action, error: 'nData Error - Cannot process command before init handshake'});
+			var e = 'nData Error - Cannot process command before init handshake';
+			console.log(e);
+			send(sock, {id: command.id, type: 'response', action: command.action, error: e});
 		}
 	});
 	

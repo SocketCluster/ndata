@@ -43,8 +43,16 @@ var ComSocket = function(netSocket) {
 		socket.removeAllListeners.apply(socket, arguments);
 	}
 	
-	self.write = function(data) {
-		socket.write(formatter.stringify(data).replace(endSymbolRegex, '') + endSymbol);
+	self.write = function(data, filters) {
+		var str = formatter.stringify(data).replace(endSymbolRegex, '');
+		if(filters) {
+			var i;
+			for(i in filters) {
+				str = filters[i](str);
+			}
+			
+		}
+		socket.write(str + endSymbol);
 	}
 }
 

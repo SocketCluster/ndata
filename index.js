@@ -187,7 +187,7 @@ var Client = function(port, host, secretKey, timeout) {
 	}
 	
 	self.escapeDots = function(str) {
-		return str.replace(/[.]/g, '\u001a');
+		return str.replace(/[.]/g, '\\u001a');
 	}
 	
 	self.watch = function(event, handler, ackCallback) {
@@ -227,6 +227,21 @@ var Client = function(port, host, secretKey, timeout) {
 		} else {
 			ackCallback();
 		}
+	}
+	
+	self.isWatching = function(event, handler) {
+		var watching = false;
+		var listeners = self._chanelWatchers[event];
+		if(listeners) {
+			var i;
+			for(i in listeners) {
+				if(listeners[i] == handler) {
+					return true;
+				}
+			}
+		}
+		
+		return false;
 	}
 	
 	self._isEmpty = function(object) {
@@ -354,11 +369,10 @@ var Client = function(port, host, secretKey, timeout) {
 		self._exec(command, callback);
 	}
 	
-	self.update = function(key, expression, callback) {
+	self.run = function(code, callback) {
 		var command = {
-			action: 'update',
-			key: key,
-			value: expression
+			action: 'run',
+			value: code
 		}
 		self._exec(command, callback);
 	}
