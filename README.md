@@ -33,6 +33,12 @@ The client exposes the following methods:
 (Please see the section on keys (below) to see how you can use keys in nData.
 Also, note that the callback argument in all of the following cases is optional.)
 
+- run(code, callback) - Run JavaScript code as a query on the nData server. The callback is in form: callback(err, data)
+Example:
+client.run('(function() { DataMap.set("main.message", "This is an important message"); return DataMap.get("main"); })()', function(err, data) {
+	console.log(data); // outputs {message: "This is an important message"}
+});
+
 - set(key, value, callback) - Set a key-value pair, when the operation has been completed, callback will be executed.
 The callback is in form: callback(err)
 
