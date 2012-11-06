@@ -68,7 +68,6 @@ If event is not specified, it will remove all nData events.
 
 - broadcast(event, value) - Broadcast an event with the specified associated value.
 
-
 ## Keys
 
 nData is very flexible with how you can use keys. It lets you set key chains of any dimension without having to manually create each link in the chain.
