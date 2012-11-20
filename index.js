@@ -196,12 +196,17 @@ var Client = function(port, host, secretKey, timeout) {
 		return str.replace(/([()'"])/g, '\\u001b$1');
 	}
 	
-	self.watch = function(event, handler, ackCallback) {
+	self.watch = function(event, handler, ackCallback, once) {
 		self._pendingWatches++;
 		
 		var command = {
-			action: 'watch',
 			event: event	
+		}
+		
+		if(once) {
+			command.action = 'watchOnce';
+		} else {
+			command.action = 'watch';
 		}
 		
 		var callback = function(error) {
@@ -214,10 +219,14 @@ var Client = function(port, host, secretKey, timeout) {
 				}
 				self.emit('watchfail');
 			} else {
-				if(!self._chanelWatchers[event]) {
-					self._chanelWatchers[event] = [];
+				if(once) {
+					self._chanelWatchers[event] = [handler];
+				} else {
+					if(!self._chanelWatchers[event]) {
+						self._chanelWatchers[event] = [];
+					}
+					self._chanelWatchers[event].push(handler);
 				}
-				self._chanelWatchers[event].push(handler);
 				if(ackCallback) {
 					ackCallback();
 				}
@@ -228,27 +237,23 @@ var Client = function(port, host, secretKey, timeout) {
 	}
 	
 	self.watchOnce = function(event, handler, ackCallback) {
-		if(!self._chanelWatchers[event]) {
-			self.watch(event, handler, ackCallback);
-		} else {
-			if(ackCallback) {
-				ackCallback();
-			}
-		}
+		self.watch(event, handler, ackCallback, true);
 	}
 	
 	self.isWatching = function(event, handler) {
-		var watching = false;
-		var listeners = self._chanelWatchers[event];
-		if(listeners) {
-			var i;
-			for(i in listeners) {
-				if(listeners[i] == handler) {
-					return true;
+		if(self._chanelWatchers.hasOwnProperty(event)) {
+			if(handler) {
+				var listeners = self._chanelWatchers[event];
+				var i;
+				for(i in listeners) {
+					if(listeners[i] == handler) {
+						return true;
+					}
 				}
+			} else {
+				return true;
 			}
 		}
-		
 		return false;
 	}
 	
@@ -316,18 +321,14 @@ var Client = function(port, host, secretKey, timeout) {
 							self._unwatch(event, callback);
 						} else {
 							self._chanelWatchers[event] = newWatchers;
-							if(ackCallback) {
-								ackCallback();
-							}
+							ackCallback && ackCallback();
 						}
 					} else {
 						var callback = function(err) {
 							if(!err) {
 								delete self._chanelWatchers[event];
 							}
-							if(ackCallback) {
-								ackCallback(err);
-							}
+							ackCallback && ackCallback(err);
 						}
 						
 						self._unwatch(event, callback);

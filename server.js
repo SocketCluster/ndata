@@ -70,15 +70,15 @@ var FlexiMap = function(object) {
 		return object && (object.constructor.name == 'Object' || object instanceof Array);
 	}
 	
-	self._getAllPaths = function(curPath, object) {
+	self._getChainLeaves = function(curChain, object) {
 		var paths = {};
 		var i, j, pth, nextPaths;
 		if (self.isIterable(object)) {
 			for (i in object) {
-				pth = curPath + '.' + i;
+				pth = curChain + '.' + i;
 				if (!paths[pth]) {
 					if (self.isIterable(object[i])) {
-						nextPaths = self._getAllPaths(pth, object[i]);
+						nextPaths = self._getChainLeaves(pth, object[i]);
 						for(j in nextPaths) {
 							paths[j] = 1;
 						}
@@ -88,18 +88,29 @@ var FlexiMap = function(object) {
 				}
 			}
 		}
-		paths[curPath] = 1;
+		paths[curChain] = 1;
 		return paths;
 	}
 	
-	self.getAllPaths = function(curPath, object) {
-		var paths = self._getAllPaths(curPath, object);
+	self.getChainLeaves = function(curChain, object) {
+		var paths = self._getChainLeaves(curChain, object);
 		var arr = [];
 		var i;
 		for(i in paths) {
 			arr.push(i);
 		}
 		return arr;
+	}
+	
+	self.getSubChains = function(curChain) {
+		var chain = curChain.split('.');
+		var paths = [];
+		var i;
+		while(chain.length > 0) {
+			paths.push(chain.join('.'));
+			chain.pop();
+		}
+		return paths;
 	}
 	
 	self.getLength = function() {
@@ -320,43 +331,20 @@ var FlexiMap = function(object) {
 var DataMap = new FlexiMap();
 var EventMap = new FlexiMap();
 
-var addEvent = function(socket, event) {
-	EventMap.set('event.' + event + '.' + socket.id, socket);
-	EventMap.set('socket.' + socket.id + '.' + event, true);
+var addListener = function(socket, event) {
+	EventMap.set('socket.' + socket.id + '.' + event, socket);
 }
 
-var removeEvent = function(socket, event) {
-	var removedEvents = EventMap.remove('socket.' + socket.id + '.' + event);
-	var removePaths = EventMap.getAllPaths(event, removedEvents);
-	
-	var i, par;
-	for(i in removePaths) {
-		EventMap.remove('event.' + removePaths[i] + '.' + socket.id);
-		par = EventMap.get('event.' + removePaths[i]);
-		if(par !== undefined && EventMap.isEmpty(par)) {
-			EventMap.remove('event.' + removePaths[i]);
-		}
-		
-		EventMap.remove('socket.' + socket.id + '.' + removePaths[i]);
-	}
-	par = EventMap.get('socket.' + socket.id);
-	if(par !== undefined && EventMap.isEmpty(par)) {
-		EventMap.remove('socket.' + socket.id);
-	}
+var removeListener = function(socket, event) {
+	EventMap.remove('socket.' + socket.id + '.' + event);
 }
 
 var getEvents = function(socket) {
 	return EventMap.get('socket.' + socket.id);
 }
 
-var removeAllEvents = function(socket) {
-	var events = getEvents(socket.id);
-	if(events) {
-		var i;
-		for(i in events) {
-			removeEvent(socket.id, i);
-		}
-	}
+var removeAllListeners = function(socket) {
+	EventMap.remove('socket.' + socket.id);
 }
 
 var countTreeLeaves = function(tree) {
@@ -370,17 +358,6 @@ var countTreeLeaves = function(tree) {
 		}
 	}
 	return num;
-}
-
-var forEachSocket = function(socketMap, callback) {
-	var i;
-	for(i in socketMap) {
-		if(socketMap[i] instanceof com.ComSocket) {
-			callback(socketMap[i]);
-		} else if(EventMap.isIterable(socketMap[i])) {
-			forEachSocket(socketMap[i], callback);
-		}
-	}
 }
 
 var actions = {
@@ -399,6 +376,15 @@ var actions = {
 	set: function(command, socket) {
 		var result = DataMap.set(command.key, command.value);
 		send(socket, {id: command.id, type: 'response', action: 'set', value: result});
+	},
+	
+	get: function(command, socket) {
+		var result = DataMap.get(command.key);
+		send(socket, {id: command.id, type: 'response', action: 'get', value: result});
+	},
+	
+	getAll: function(command, socket) {
+		send(socket, {id: command.id, type: 'response', action: 'getAll', value: DataMap.getData()});
 	},
 	
 	add: function(command, socket) {
@@ -436,42 +422,39 @@ var actions = {
 		send(socket, {id: command.id, type: 'response', action: 'hasKey', value: DataMap.hasKey(command.key)});
 	},
 	
-	get: function(command, socket) {
-		var result = DataMap.get(command.key);
-		send(socket, {id: command.id, type: 'response', action: 'get', value: result});
-	},
-	
-	getAll: function(command, socket) {
-		send(socket, {id: command.id, type: 'response', action: 'getAll', value: DataMap.getData()});
-	},
-	
 	watch: function(command, socket) {
-		addEvent(socket, command.event);
+		addListener(socket, command.event);
 		send(socket, {id: command.id, type: 'response', action: 'watch', event: command.event});
+	},
+	
+	watchOnce: function(command, socket) {
+		removeListener(socket, command.event);
+		addListener(socket, command.event);
+		send(socket, {id: command.id, type: 'response', action: 'watchOnce', event: command.event});
 	},
 	
 	unwatch: function(command, socket) {
 		if(command.event) {
-			removeEvent(socket, command.event);
+			removeListener(socket, command.event);
 		} else {
-			removeAllEvents(socket);
+			removeAllListeners(socket);
 		}
+		
 		send(socket, {id: command.id, type: 'response', action: 'unwatch', event: command.event});
 	},
 	
 	isWatching: function(command, socket) {
-		var result = EventMap.hasKey('event.' + command.event + '.' + socket.id);
+		var result = EventMap.hasKey('socket.' + socket.id + '.' + command.event);
 		send(socket, {id: command.id, type: 'response', action: 'isWatching', event: command.event});
 	},
 	
 	broadcast: function(command, socket) {
-		var sockets = EventMap.get('event.' + command.event);
-		
-		if(sockets) {
-			var sock;
-			var i;
-			for(i in sockets) {
-				sock = sockets[i];
+		var sockets = EventMap.get('socket');
+		var i, sock, eventString;
+		for(i in sockets) {
+			eventString = 'socket.' + i + '.' + command.event;
+			if(EventMap.hasKey(eventString)) {
+				sock = EventMap.get(eventString);
 				if(sock instanceof com.ComSocket) {
 					send(sock, {type: 'event', event: command.event, value: command.value});
 				}
@@ -651,7 +634,7 @@ server.on('connection', function(sock) {
 		if(initialized.hasOwnProperty(sock.id)) {
 			delete initialized[sock.id];
 		}
-		removeAllEvents(sock);
+		removeAllListeners(sock);
 	});
 });
 
