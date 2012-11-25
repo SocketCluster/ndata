@@ -5,6 +5,7 @@ var HOST = '127.0.0.1';
 var initialized = {};
 
 var com = require('./com');
+var FlexiMap = require('./fleximap').FlexiMap;
 
 var escapeStr = '\\u001b';
 var escapeArr = escapeStr.split('');
@@ -41,293 +42,6 @@ var send = function(socket, object) {
 	socket.write(object, filters);
 }
 
-var isEmpty = function(object) {
-	var i;
-	var empty = true;
-	for(i in object) {
-		empty = false;
-		break;
-	}
-	return empty;
-}
-
-var FlexiMap = function(object) {
-	var self = this;
-	self.length = 0;
-	self._data = [];
-	
-	self.isEmpty = function(object) {
-		var i;
-		var empty = true;
-		for(i in object) {
-			empty = false;
-			break;
-		}
-		return empty;
-	}
-	
-	self.isIterable = function(object) {
-		return object && (object.constructor.name == 'Object' || object instanceof Array);
-	}
-	
-	self._getChainLeaves = function(curChain, object) {
-		var paths = {};
-		var i, j, pth, nextPaths;
-		if (self.isIterable(object)) {
-			for (i in object) {
-				pth = curChain + '.' + i;
-				if (!paths[pth]) {
-					if (self.isIterable(object[i])) {
-						nextPaths = self._getChainLeaves(pth, object[i]);
-						for(j in nextPaths) {
-							paths[j] = 1;
-						}
-					} else {
-						paths[pth] = 1;
-					}
-				}
-			}
-		}
-		paths[curChain] = 1;
-		return paths;
-	}
-	
-	self.getChainLeaves = function(curChain, object) {
-		var paths = self._getChainLeaves(curChain, object);
-		var arr = [];
-		var i;
-		for(i in paths) {
-			arr.push(i);
-		}
-		return arr;
-	}
-	
-	self.getSubChains = function(curChain) {
-		var chain = curChain.split('.');
-		var paths = [];
-		var i;
-		while(chain.length > 0) {
-			paths.push(chain.join('.'));
-			chain.pop();
-		}
-		return paths;
-	}
-	
-	self.getLength = function() {
-		return self._data.length;
-	}
-	
-	if(object) {
-		var i;
-		if(self.isIterable(object)) {
-			for(i in object) {
-				if(self.isIterable(object[i])) {
-					self._data[i] = new FlexiMap(object[i]);
-				} else {
-					self._data[i] = object[i];
-				}
-			}
-		} else {
-			self._data.push(object);
-		}
-	}
-	
-	self._isInt = function(input) {
-		return /^[0-9]+$/.test(input);
-	}
-	
-	self._getValue = function(key) {
-		return self._data[key];
-	}
-	
-	self._setValue = function(key, value) {
-		self._data[key] = value;
-	}
-	
-	self._deleteValue = function(key) {
-		delete self._data[key];
-		if(self._isInt(key)) {
-			self._data.splice(key, 1);
-		}
-	}
-	
-	self._get = function(keyChain) {
-		var key = keyChain[0];
-		var data = self._getValue(key);
-		if(keyChain.length < 2) {
-			return data;
-		} else {
-			if(data instanceof FlexiMap) {
-				return data._get(keyChain.slice(1));
-			} else {
-				return null;
-			}
-		}
-	}
-	
-	self.get = function(keyPath) {
-		var keyChain = keyPath.split('.');
-		var result = self._get(keyChain);
-		if(result instanceof FlexiMap) {
-			result = result.getData();
-		}
-		return result;
-	}
-	
-	self.hasImmediateKey = function(key) {
-		return self._data[key] !== undefined;
-	}
-	
-	self.hasKey = function(keyPath) {
-		return (self.get(keyPath) === undefined) ? false : true;
-	}
-	
-	self._set = function(keyChain, value) {
-		var key = keyChain[0];
-		if(keyChain.length < 2) {
-			if(!(value instanceof FlexiMap) && self.isIterable(value)) {
-				value = new FlexiMap(value);
-			}
-			self._setValue(key, value);
-		} else {
-			if(!self.hasImmediateKey(key) || !(self._getValue(key) instanceof FlexiMap)) {
-				self._setValue(key, new FlexiMap());
-			}
-			self._getValue(key)._set(keyChain.slice(1), value);
-		}
-	}
-	
-	self.set = function(keyPath, value) {
-		var keyChain = keyPath.split('.');
-		self._set(keyChain, value);
-		return value;
-	}
-	
-	self.add = function(keyPath, value) {
-		var target = self.get(keyPath);
-		
-		if(!target) {
-			target = new FlexiMap([value]);
-			self.set(keyPath, target);
-		} else if(!(target instanceof FlexiMap)) {
-			target = new FlexiMap([target, value]);
-			self.set(keyPath, target);
-		} else {
-			self.set(keyPath + '.' + target.getLength(), value);
-		}
-		return value;
-	}
-	
-	self.escapeBackslashes = function(str) {
-		return str.replace(/([^\\])\\([^\\])/g, '$1\\\\$2');
-	}
-	
-	self.validateQuery = function(str) {
-		return /^ *function *\([^)]*\) *\{(\n|.)*\} *$/.test(str);
-	}
-	
-	self.run = function(code) {
-		if(!self.validateQuery(code)) {
-			throw "JavaScript query must be an anonymous function declaration";
-		}
-		return Function('return (' + self.escapeBackslashes(code) + ')(arguments[0]);')(self);
-	}
-	
-	self._remove = function(key) {
-		if(self.hasImmediateKey(key)) {
-			var data = self._getValue(key);
-			self._deleteValue(key);
-			
-			if(data instanceof FlexiMap) {
-				return data.getData();
-			} else {
-				return data;
-			}
-		} else {
-			return null;
-		}
-	}
-	
-	self.remove = function(keyPath) {
-		var keyChain = keyPath.split('.');
-		if(keyChain.length < 2) {
-			return self._remove(keyChain[0]);
-		}
-		var parentMap = self._get(keyChain.slice(0, -1));
-		if(parentMap instanceof FlexiMap) {
-			return parentMap._remove(keyChain[keyChain.length - 1]);
-		} else {
-			return null;
-		}
-	}
-	
-	self.pop = function(keyPath) {
-		var target = self.get(keyPath);
-		if(!target) {
-			return null;
-		}
-		if(!(target instanceof FlexiMap) || target.getLength() < 1) {
-			return self.remove(keyPath);
-		}
-		
-		return self.remove(keyPath + '.' + (target.getLength() - 1));
-	}
-	
-	self.removeAll = function() {
-		self._data = [];
-	}
-	
-	self._arrayToObject = function(array) {
-		var i;
-		var obj = {};
-		for(i in array) {
-			obj[i] = array[i];
-		}
-		return obj;
-	}
-	
-	self.getData = function() {
-		var isArray = (self._data.length > 0) ? true : false;
-		var i;
-		
-		var data = [];
-		
-		for(i in self._data) {
-			if(self._data[i] instanceof FlexiMap) {
-				data[i] = self._data[i].getData();
-			} else {
-				data[i] = self._data[i];
-			}
-		}
-		
-		if(isArray) {
-			var len = data.length;
-			
-			for(i=0; i<len; i++) {
-				if(data[i] === undefined) {
-					isArray = false;
-					break;
-				}
-			}
-		}
-		
-		if(isArray) {
-			for(i in data) {
-				if(!self._isInt(i)) {
-					isArray = false;
-					break;
-				}
-			}
-		}
-		
-		if(isArray) {
-			return data;
-		}
-		
-		return self._arrayToObject(data);
-	}
-}
-
 var DataMap = new FlexiMap();
 var EventMap = new FlexiMap();
 
@@ -335,16 +49,46 @@ var addListener = function(socket, event) {
 	EventMap.set('socket.' + socket.id + '.' + event, socket);
 }
 
+var hasListener = function(socket, event) {
+	return EventMap.hasKey('socket.' + socket.id + '.' + event);
+}
+
+var anyHasListener = function(event) {
+	var sockets = EventMap.get('socket');
+	var i;
+	for(i in sockets) {
+		if(EventMap.hasKey('socket.' + i + '.' + event)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 var removeListener = function(socket, event) {
 	EventMap.remove('socket.' + socket.id + '.' + event);
 }
 
-var getEvents = function(socket) {
+var getListeners = function(socket) {
 	return EventMap.get('socket.' + socket.id);
 }
 
 var removeAllListeners = function(socket) {
 	EventMap.remove('socket.' + socket.id);
+}
+
+var escapeBackslashes = function(str) {
+	return str.replace(/([^\\])\\([^\\])/g, '$1\\\\$2');
+}
+	
+var validateQuery = function(str) {
+	return /^ *function *\([^)]*\) *\{(\n|.)*\} *$/.test(str);
+}
+
+var run = function(code) {
+	if(!validateQuery(code)) {
+		throw "JavaScript query must be an anonymous function declaration";
+	}
+	return Function('return (' + escapeBackslashes(code) + ')(arguments[0], arguments[1]);')(DataMap, EventMap);
 }
 
 var countTreeLeaves = function(tree) {
@@ -387,6 +131,11 @@ var actions = {
 		send(socket, {id: command.id, type: 'response', action: 'getAll', value: DataMap.getData()});
 	},
 	
+	count: function(command, socket) {
+		var result = DataMap.count(command.key);
+		send(socket, {id: command.id, type: 'response', action: 'count', value: result});
+	},
+	
 	add: function(command, socket) {
 		var result = DataMap.add(command.key, command.value);
 		send(socket, {id: command.id, type: 'response', action: 'add', value: result});
@@ -395,7 +144,7 @@ var actions = {
 	run: function(command, socket) {
 		var ret = {id: command.id, type: 'response', action: 'run'};
 		try {
-			var result = DataMap.run(command.value);
+			var result = run(command.value);
 			ret.value = result;
 		} catch(e) {
 			ret.error = 'nData Error - Exception at run(): ' + e;
@@ -427,10 +176,12 @@ var actions = {
 		send(socket, {id: command.id, type: 'response', action: 'watch', event: command.event});
 	},
 	
-	watchOnce: function(command, socket) {
-		removeListener(socket, command.event);
-		addListener(socket, command.event);
-		send(socket, {id: command.id, type: 'response', action: 'watchOnce', event: command.event});
+	watchExclusive: function(command, socket) {
+		var listening = anyHasListener(command.event);
+		if(!listening) {
+			addListener(socket, command.event);
+		}
+		send(socket, {id: command.id, type: 'response', action: 'watchExclusive', event: command.event, value: listening});
 	},
 	
 	unwatch: function(command, socket) {
