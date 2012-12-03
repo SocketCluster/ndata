@@ -1,7 +1,7 @@
 {
   "name": "ndata",
   "description": "nData key-value store",
-  "version": "0.9.11",
+  "version": "0.9.12",
   "author": {
     "name": "JF Gros-Dubois",
     "email": "flashthink@gmail.com"
@@ -13,9 +13,7 @@
     }
   ],
   "dependencies": {},
-  "bundleDependencies": [
-    "json"
-  ],
+  "devDependencies": {},
   "keywords": [
     "ndata",
     "ncombo",
@@ -30,5 +28,6 @@
   "main": "index",
   "engines": {
     "node": ">= 0.6.12"
-  }
+  },
+  "optionalDependencies": {}
 }
