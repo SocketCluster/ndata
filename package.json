@@ -1,7 +1,7 @@
 {
 	"name": "ndata",
 	"description": "nData key-value store",
-	"version": "0.9.19",
+	"version": "0.9.20",
 	"author": {
 		"name": "JF Gros-Dubois",
 		"email": "flashthink@gmail.com"
@@ -10,11 +10,11 @@
 		"name": "JF Gros-Dubois",
 		"email": "flashthink@gmail.com"
 	}],
-	"dependencies": {},
+	"dependencies": {
+		"fleximap": "0.9.0",
+		"ncom": "0.9.0"		
+	},
 	"devDependencies": {},
-	"bundleDependencies": [
-		"json"
-	],
 	"keywords": [
 		"ndata",
 		"ncombo",
@@ -24,7 +24,7 @@
 	],
 	"repository": {
 		"type": "git",
-		"url": "git://github.com/topcloudsystems/ndata.git"
+		"url": "git://github.com/topcloud/ndata.git"
 	},
 	"main": "index",
 	"engines": {
