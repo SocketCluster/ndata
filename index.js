@@ -534,16 +534,20 @@ var Client = function (port, host, secretKey, timeout) {
 	};
 	
 	/*
-		registerDeathQuery(query,[ options, callback])
+		registerDeathQuery(query,[ data, callback])
 	*/
-	self.registerDeathQuery = function (query, data, callback) {
-		var data = {};
+	self.registerDeathQuery = function () {
+		var data;
 		var callback = null;
+		
 		if (arguments[1] instanceof Function) {
+			data = arguments[0].data || {};
 			callback = arguments[1];
 		} else if (arguments[1]) {
-			data = arguments[1].data;
+			data = arguments[1];
 			callback = arguments[2];
+		} else {
+			data = arguments[0].data || {};
 		}
 		
 		var query = self._stringifyQuery(arguments[0], data);
