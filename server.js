@@ -167,39 +167,49 @@ var actions = {
 			}
 			ret.error = 'nData Error - Exception at run(): ' + e;
 		}
-		send(socket, ret);
+		if (!command.noAck) {
+			send(socket, ret);
+		}
 	},
 	
 	remove: function (command, socket) {
 		var result = dataMap.remove(command.key);
-		var response = {id: command.id, type: 'response', action: 'remove'};
-		if (command.getValue) {
-			response.value = result;
+		if (!command.noAck) {
+			var response = {id: command.id, type: 'response', action: 'remove'};
+			if (command.getValue) {
+				response.value = result;
+			}
+			send(socket, response);
 		}
-		send(socket, response);
 	},
 	
 	removeRange: function (command, socket) {
 		var result = dataMap.removeRange(command.key, command.fromIndex, command.toIndex);
-		var response = {id: command.id, type: 'response', action: 'removeRange'};
-		if (command.getValue) {
-			response.value = result;
+		if (!command.noAck) {
+			var response = {id: command.id, type: 'response', action: 'removeRange'};
+			if (command.getValue) {
+				response.value = result;
+			}
+			send(socket, response);
 		}
-		send(socket, response);
 	},
 	
 	removeAll: function (command, socket) {
 		dataMap.removeAll();
-		send(socket, {id: command.id, type: 'response', action: 'removeAll'});
+		if (!command.noAck) {
+			send(socket, {id: command.id, type: 'response', action: 'removeAll'});
+		}
 	},
 	
 	pop: function (command, socket) {
 		var result = dataMap.pop(command.key);
-		var response = {id: command.id, type: 'response', action: 'pop'};
-		if (command.getValue) {
-			response.value = result;
+		if (!command.noAck) {
+			var response = {id: command.id, type: 'response', action: 'pop'};
+			if (command.getValue) {
+				response.value = result;
+			}
+			send(socket, response);
 		}
-		send(socket, response);
 	},
 	
 	hasKey: function (command, socket) {
@@ -263,16 +273,16 @@ var server = com.createServer();
 
 var errorHandler = function (err) {
 	var error;
+	
 	if (err.stack) {
-		console.log(err.stack);
 		error = {
 			message: err.message,
 			stack: err.stack
 		};
 	} else {
 		error = err;
-		console.log(err);
 	}
+	
 	process.send({event: 'error', data: error});
 };
 
@@ -371,7 +381,11 @@ var compile = function (data, macroMap) {
 	if (data instanceof Array) {
 		result = [];
 		for (var i in data) {
-			result[i] = compileString(data[i], macroMap);
+			if (typeof data[i] == 'number') {
+				result[i] = data[i];
+			} else {
+				result[i] = compileString(data[i], macroMap);
+			}
 		}
 	} else {
 		result = compileString(data, macroMap);

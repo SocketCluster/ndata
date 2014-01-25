@@ -9,7 +9,14 @@ var HOST = '127.0.0.1';
 
 var Server = function (port, secretKey, expiryAccuracy) {
 	var self = this;
-	var args = Array.prototype.slice.call(arguments);
+	
+	var args = [];
+	
+	for (var i in arguments) {
+		if (arguments[i]) {
+			args.push(arguments[i]);
+		}
+	}
 	
 	self._server = fork(__dirname + '/server.js', args);
 	
@@ -94,7 +101,7 @@ var Client = function (port, host, secretKey, timeout) {
 			var command = {
 				action: 'init',
 				secretKey: secretKey
-			}
+			};
 			self._connected = true;
 			self._exec(command, function (data) {
 				self._execPending();
@@ -197,7 +204,7 @@ var Client = function (port, host, secretKey, timeout) {
 		var command = {
 			event: event,
 			action: 'watch'
-		}
+		};
 	
 		var callback = function (err) {
 			if (err) {
@@ -225,7 +232,7 @@ var Client = function (port, host, secretKey, timeout) {
 		var command = {
 			event: event,
 			action: 'watchExclusive'
-		}
+		};
 	
 		var callback = function (err, alreadyWatching) {
 			if (err) {
@@ -254,7 +261,7 @@ var Client = function (port, host, secretKey, timeout) {
 		var command = {
 			action: 'unwatch',
 			event: event
-		}
+		};
 		
 		var cb = function (error) {
 			if (error) {
@@ -334,7 +341,7 @@ var Client = function (port, host, secretKey, timeout) {
 			action: 'broadcast',
 			event: event,
 			value: value
-		}
+		};
 		
 		self._exec(command, callback);
 	};
@@ -346,7 +353,7 @@ var Client = function (port, host, secretKey, timeout) {
 		var key = arguments[0];
 		var value = arguments[1];
 		var options = {
-			getValue: false
+			getValue: 0
 		};
 		var callback;
 		
@@ -361,7 +368,7 @@ var Client = function (port, host, secretKey, timeout) {
 			action: 'set',
 			key: key,
 			value: value
-		}
+		};
 		
 		if (options.getValue) {
 			command.getValue = 1;
@@ -378,7 +385,7 @@ var Client = function (port, host, secretKey, timeout) {
 			action: 'expire',
 			keys: keys,
 			value: seconds
-		}
+		};
 		self._exec(command, callback);
 	};
 	
@@ -389,7 +396,7 @@ var Client = function (port, host, secretKey, timeout) {
 		var command = {
 			action: 'unexpire',
 			keys: keys
-		}
+		};
 		self._exec(command, callback);
 	};
 	
@@ -400,7 +407,7 @@ var Client = function (port, host, secretKey, timeout) {
 		var command = {
 			action: 'getExpiry',
 			key: key
-		}
+		};
 		self._exec(command, callback);
 	};
 	
@@ -411,7 +418,7 @@ var Client = function (port, host, secretKey, timeout) {
 		var key = arguments[0];
 		var value = arguments[1];
 		var options = {
-			getValue: false
+			getValue: 0
 		};
 		var callback;
 		if (arguments[2] instanceof Function) {
@@ -425,7 +432,7 @@ var Client = function (port, host, secretKey, timeout) {
 			action: 'add',
 			key: key,
 			value: value
-		}
+		};
 		
 		if (options.getValue) {
 			command.getValue = 1;
@@ -441,7 +448,7 @@ var Client = function (port, host, secretKey, timeout) {
 		var key = arguments[0];
 		var value = arguments[1];
 		var options = {
-			getValue: false
+			getValue: 0
 		};
 		var callback;
 		if (arguments[2] instanceof Function) {
@@ -455,7 +462,7 @@ var Client = function (port, host, secretKey, timeout) {
 			action: 'concat',
 			key: key,
 			value: value
-		}
+		};
 		
 		if (options.getValue) {
 			command.getValue = 1;
@@ -468,7 +475,7 @@ var Client = function (port, host, secretKey, timeout) {
 		var command = {
 			action: 'get',
 			key: key	
-		}
+		};
 		self._exec(command, callback);
 	};
 	
@@ -491,7 +498,7 @@ var Client = function (port, host, secretKey, timeout) {
 			action: 'getRange',
 			key: key,
 			fromIndex: fromIndex
-		}
+		};
 		
 		if (toIndex) {
 			command.toIndex = toIndex;
@@ -503,7 +510,7 @@ var Client = function (port, host, secretKey, timeout) {
 	self.getAll = function (callback) {
 		var command = {
 			action: 'getAll'
-		}
+		};
 		self._exec(command, callback);
 	};
 	
@@ -511,7 +518,7 @@ var Client = function (port, host, secretKey, timeout) {
 		var command = {
 			action: 'count',
 			key: key
-		}
+		};
 		self._exec(command, callback);
 	};
 	
@@ -521,6 +528,7 @@ var Client = function (port, host, secretKey, timeout) {
 		
 		var validVarNameRegex = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
 		var headerString = '';
+		
 		for (var i in data) {
 			if (!validVarNameRegex.test(i)) {
 				throw new Error("The variable name '" + i + "' is invalid");
@@ -556,7 +564,7 @@ var Client = function (port, host, secretKey, timeout) {
 			var command = {
 				action: 'registerDeathQuery',
 				value: query
-			}
+			};
 			self._exec(command, callback);
 		} else {
 			callback && callback('Invalid query format - Query must be a string or a function');
@@ -569,6 +577,7 @@ var Client = function (port, host, secretKey, timeout) {
 	self.run = function () {
 		var data;
 		var baseKey = null;
+		var noAck = null;
 		var callback = null;
 		
 		if (arguments[0].data) {
@@ -581,7 +590,10 @@ var Client = function (port, host, secretKey, timeout) {
 			callback = arguments[1];
 		} else if (arguments[1]) {
 			baseKey = arguments[1].baseKey;
-			data = arguments[1].data;
+			noAck = arguments[1].noAck;
+			if (arguments[1].data) {
+				data = arguments[1].data;
+			}
 			callback = arguments[2];
 		}
 		
@@ -591,10 +603,13 @@ var Client = function (port, host, secretKey, timeout) {
 			var command = {
 				action: 'run',
 				value: query
-			}
+			};
 			
 			if (baseKey) {
 				command.baseKey = baseKey;
+			}
+			if (noAck) {
+				command.noAck = noAck;
 			}
 			
 			self._exec(command, callback);
@@ -621,22 +636,30 @@ var Client = function (port, host, secretKey, timeout) {
 	self.remove = function () {
 		var key = arguments[0];
 		var options = {
-			getValue: false
+			getValue: 0
 		};
 		var callback;
 		if (arguments[1] instanceof Function) {
 			callback = arguments[1];
 		} else {
-			options.getValue = arguments[1];
+			if (arguments[1] instanceof Object) {
+				options = arguments[1];
+			} else {
+				options.getValue = arguments[1];
+			}
 			callback = arguments[2];
 		}
 		
 		var command = {
 			action: 'remove',
 			key: key
-		}
+		};
+		
 		if (options.getValue) {
 			command.getValue = 1;
+		}
+		if (options.noAck) {
+			command.noAck = 1;
 		}
 		
 		self._exec(command, callback);
@@ -650,13 +673,13 @@ var Client = function (port, host, secretKey, timeout) {
 		var fromIndex = arguments[1];
 		var options = {
 			toIndex: null,
-			getValue: false
+			getValue: 0
 		};
 		var callback;
 		if (arguments[2] instanceof Function) {
 			callback = arguments[2];
 		} else if (arguments[3] instanceof Function) {
-			options.toIndex = arguments[2];
+			options = arguments[2];
 			callback = arguments[3];
 		} else {
 			options.toIndex = arguments[2];
@@ -668,13 +691,16 @@ var Client = function (port, host, secretKey, timeout) {
 			action: 'removeRange',
 			fromIndex: fromIndex,
 			key: key
-		}
+		};
 		
 		if (options.toIndex) {
 			command.toIndex = options.toIndex;
 		}
 		if (options.getValue) {
 			command.getValue = 1;
+		}
+		if (options.noAck) {
+			command.noAck = 1;
 		}
 		
 		self._exec(command, callback);
@@ -683,7 +709,7 @@ var Client = function (port, host, secretKey, timeout) {
 	self.removeAll = function (callback) {
 		var command = {
 			action: 'removeAll'
-		}
+		};
 		self._exec(command, callback);
 	};
 	
@@ -693,7 +719,7 @@ var Client = function (port, host, secretKey, timeout) {
 	self.pop = function () {
 		var key = arguments[0];
 		var options = {
-			getValue: false
+			getValue: 0
 		};
 		var callback;
 		if (arguments[1] instanceof Function) {
@@ -706,9 +732,12 @@ var Client = function (port, host, secretKey, timeout) {
 		var command = {
 			action: 'pop',
 			key: key
-		}
+		};
 		if (options.getValue) {
 			command.getValue = 1;
+		}
+		if (options.noAck) {
+			command.noAck = 1;
 		}
 		
 		self._exec(command, callback);
@@ -718,7 +747,7 @@ var Client = function (port, host, secretKey, timeout) {
 		var command = {
 			action: 'hasKey',
 			key: key
-		}
+		};
 		self._exec(command, callback);
 	};
 	
