@@ -3,6 +3,7 @@ var EventEmitter = require('events').EventEmitter;
 var ComSocket = require('ncom').ComSocket;
 var FlexiMap = require('fleximap').FlexiMap;
 var json = require('json');
+var domain = require('domain');
 
 var DEFAULT_PORT = 9435;
 var HOST = '127.0.0.1';
@@ -37,7 +38,7 @@ var Server = function (port, secretKey, expiryAccuracy) {
 	};
 };
 
-Server.prototype.__proto__ = EventEmitter.prototype;
+Server.prototype = Object.create(EventEmitter.prototype);
 
 module.exports.createServer = function (port, secretKey, expiryAccuracy) {
 	if (!port) {
@@ -48,6 +49,12 @@ module.exports.createServer = function (port, secretKey, expiryAccuracy) {
 
 var Client = function (port, host, secretKey, timeout) {
 	var self = this;
+	self._errorDomain = domain.createDomain();
+	
+	self._errorDomain.on('error', function (err) {
+		self.emit('error', err);
+	});
+	
 	secretKey = secretKey || null;
 	if (timeout) {
 		self._timeout = timeout;
@@ -158,6 +165,7 @@ var Client = function (port, host, secretKey, timeout) {
 		if (self._connected) {
 			command.id = self._genID();
 			if (callback) {
+				callback = self._errorDomain.bind(callback);
 				var request = {callback: callback, command: command};
 				self._commandMap[command.id] = request;
 				
@@ -211,7 +219,7 @@ var Client = function (port, host, secretKey, timeout) {
 				ackCallback && ackCallback(err);
 				self.emit('watchfail');
 			} else {
-				self._watchMap.add(event, handler);
+				self._watchMap.add(event, self._errorDomain.bind(handler));
 				ackCallback && ackCallback();
 				self.emit('watch');
 			}
@@ -221,7 +229,11 @@ var Client = function (port, host, secretKey, timeout) {
 	
 	self.watchOnce = function (event, handler, ackCallback) {
 		if (self.isWatching(event, handler)) {
-			ackCallback && ackCallback();
+			if (ackCallback) {
+				self._errorDomain.run(function () {
+					ackCallback();
+				});
+			}
 			self.emit('watch');
 		} else {
 			self.watch(event, handler, ackCallback);
@@ -236,13 +248,21 @@ var Client = function (port, host, secretKey, timeout) {
 	
 		var callback = function (err, alreadyWatching) {
 			if (err) {
-				ackCallback && ackCallback(err, alreadyWatching);
+				if (ackCallback) {
+					self._errorDomain.run(function () {
+						ackCallback(err, alreadyWatching);
+					});
+				}
 				self.emit('watchfail');
 			} else {
 				if (!alreadyWatching) {
-					self._watchMap.add(event, handler);
+					self._watchMap.add(event, self._errorDomain.bind(handler));
 				}
-				ackCallback && ackCallback(null, alreadyWatching);
+				if (ackCallback) {
+					self._errorDomain.run(function () {
+						ackCallback(null, alreadyWatching);
+					});
+				}
 				self.emit('watch');
 			}
 		}
@@ -779,7 +799,7 @@ var Client = function (port, host, secretKey, timeout) {
 	};
 };
 
-Client.prototype.__proto__ = EventEmitter.prototype;
+Client.prototype = Object.create(EventEmitter.prototype);
 
 module.exports.createClient = function (port, secretKey) {
 	if (!port) {
