@@ -142,17 +142,18 @@ var Client = function (port, host, secretKey, timeout) {
 		if (response.type == 'response') {
 			if (self._commandMap.hasOwnProperty(id)) {
 				clearTimeout(self._commandMap[id].timeout);
-				
 				var action = response.action;
-				if (response.value !== undefined) {
-					self._commandMap[id].callback(error, response.value);
-				} else if (action == 'watch' || action == 'unwatch') {
-					self._commandMap[id].callback(error);
-				} else {
-					self._commandMap[id].callback(error);
-				}
 				
+				var callback = self._commandMap[id].callback;
 				delete self._commandMap[id];
+				
+				if (response.value !== undefined) {
+					callback(error, response.value);
+				} else if (action == 'watch' || action == 'unwatch') {
+					callback(error);
+				} else {
+					callback(error);
+				}
 			}
 		} else if (response.type == 'event') {
 			self._broadcast(response.event, response.value);
@@ -171,11 +172,11 @@ var Client = function (port, host, secretKey, timeout) {
 				
 				var timeout = setTimeout(function () {
 					var error = 'nData Error - The ' + command.action + ' action timed out';
-					callback(error);
 					delete request.callback;
 					if (self._commandMap.hasOwnProperty(command.id)) {
 						delete self._commandMap[command.id];
 					}
+					callback(error);
 				}, self._timeout);
 				
 				request.timeout = timeout;
