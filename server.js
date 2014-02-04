@@ -310,94 +310,6 @@ var convertToString = function (object) {
 	return str;
 };
 
-var arrayToString = function (array) {
-	if (array.length == 1) {
-		return convertToString(array[0]);
-	}
-	var i;
-	var str = '';
-	for (i in array) {
-		str += convertToString(array[i]);
-	}
-	return str;
-};
-
-var compileString = function (str, macroMap, macroName) {
-	var buffer = [];
-	var chars;
-	if (typeof str == 'string') {
-		chars = str.split('');
-	} else {
-		chars = str;
-	}
-	var len = chars.length;
-	
-	var i, j, curMacroChar, segment, numOpen, notEscaped, comp;
-	for (i=0; i<len; i++) {
-		if (macroMap.hasOwnProperty(chars[i]) && chars[i + 1] == '(') {
-		
-			curMacroChar = chars[i];
-			i += 2;
-			segment = [];
-			numOpen = 1;
-			
-			for (j=i; j<len; j++) {
-				notEscaped = chars[j-1] != '\\';
-				if (notEscaped) {
-					if (chars[j] == '(') {
-						numOpen++;
-					} else if (chars[j] == ')') {
-						numOpen--;
-					}
-				}
-				
-				if (numOpen > 0) {
-					segment.push(chars[j]);
-				} else {
-					break;
-				}
-			}
-			
-			i = j;
-			if (curMacroChar == '#') {
-				comp = macroMap[curMacroChar](arrayToString(segment));
-			} else {
-				comp = compileString(segment, macroMap, curMacroChar);
-			}
-			buffer.push(comp);
-		} else {
-			buffer.push(chars[i]);
-		}
-	}
-	if (macroName) {
-		return macroMap[macroName](arrayToString(buffer));
-	} else {
-		return arrayToString(buffer);
-	}
-};
-
-var compile = function (data, macroMap) {
-	var result;
-	if (data instanceof Array) {
-		result = [];
-		for (var i in data) {
-			if (typeof data[i] == 'number') {
-				result[i] = data[i];
-			} else {
-				result[i] = compileString(data[i], macroMap);
-			}
-		}
-	} else {
-		result = compileString(data, macroMap);
-	}
-	return result;
-};
-
-var macros = {
-	'%': evaluate,
-	'$': substitute
-};
-
 var errorDomain = domain.create();
 errorDomain.on('error', errorHandler);
 
@@ -407,15 +319,6 @@ var handleConnection = errorDomain.bind(function (sock) {
 	sock.on('message', function (command) {
 		if (!SECRET_KEY || initialized.hasOwnProperty(sock.id) || command.action == 'init') {
 			try {
-				if (command.key) {
-					command.key = compile(command.key, macros);
-				}
-				if (command.value && typeof command.value == 'string') {
-					command.value = compile(command.value, macros);
-				}
-				if (command.baseKey) {
-					command.baseKey = compile(command.baseKey, macros);
-				}
 				if (actions[command.action]) {
 					actions[command.action](command, sock);
 				}
