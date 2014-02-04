@@ -44,10 +44,10 @@ var queryFn = function (DataMap) {
 	// The message variable comes from queryFn.data
 	DataMap.set(['main', 'message'], myMessage);
 	return DataMap.get(['main']); 
-}
+};
 queryFn.data = {
 	myMessage: 'This message is safe, special characters have been escaped'
-}
+};
 
 client.run(queryFn, function(err, data) {
 	console.log(data); // outputs {message: "This is an important message"}
