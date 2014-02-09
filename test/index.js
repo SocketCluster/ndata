@@ -112,3 +112,12 @@ clientA.set(['that', '8a788b9c-c50e-0b3f-bd47-ec0c63327bf1'], [1,2,3,4,5], funct
 		});
 	});
 });
+
+clientA.set(['check', 'expire', 'key'], 'some data', function(err) {
+	clientA.expire([['check', 'expire', 'key']], 5);
+	setTimeout(function () {
+		clientA.get(['check'], function(err, value) {
+			console.log('expire 1:', value);
+		});
+	}, 11000);
+});
