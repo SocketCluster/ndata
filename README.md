@@ -41,12 +41,12 @@ The callback is in form: callback(err, data) Example:
 
 ```js
 var queryFn = function (DataMap) {
-	// The message variable comes from queryFn.data
+	// The myMessage variable comes from queryFn.data
 	DataMap.set(['main', 'message'], myMessage);
 	return DataMap.get(['main']); 
 };
 queryFn.data = {
-	myMessage: 'This message is safe, special characters have been escaped'
+	myMessage: 'This is an important message'
 };
 
 client.run(queryFn, function(err, data) {
