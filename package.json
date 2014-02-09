@@ -1,7 +1,7 @@
 {
 	"name": "ndata",
 	"description": "nData key-value store",
-	"version": "0.9.30",
+	"version": "0.9.31",
 	"author": {
 		"name": "JF Gros-Dubois",
 		"email": "flashthink@gmail.com"

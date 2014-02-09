@@ -53,10 +53,6 @@ var getListeners = function (socket) {
 	return eventMap.get(['sockets', socket.id]);
 };
 
-var escapeBackslashes = function (str) {
-	return str.replace(/([^\\])\\([^\\])/g, '$1\\\\$2');
-};
-
 var run = function (query, baseKey) {
 	var rebasedDataMap;
 	if (baseKey) {
@@ -65,7 +61,7 @@ var run = function (query, baseKey) {
 		rebasedDataMap = dataMap;
 	}
 	
-	return Function('"use strict"; return (' + escapeBackslashes(query) + ')(arguments[0], arguments[1], arguments[2]);')(rebasedDataMap, dataExpirer, eventMap);
+	return Function('"use strict"; return (' + query + ')(arguments[0], arguments[1], arguments[2]);')(rebasedDataMap, dataExpirer, eventMap);
 };
 
 var actions = {
@@ -284,30 +280,6 @@ var errorHandler = function (err) {
 	}
 	
 	process.send({event: 'error', data: error});
-};
-
-var evaluate = function (str) {
-	return Function('"use strict"; return ' + dataMap.escapeBackslashes(str) + ' || null;')();
-};
-
-var substitute = function (str) {
-	return dataMap.get(str);
-};
-
-var convertToString = function (object) {
-	var str;
-	if (typeof object == 'string') {
-		str = object;
-	} else if (typeof object == 'number') {
-		str = object;
-	} else if (object == null) {
-		str = null;
-	} else if (object == undefined) {
-		str = object;
-	} else {
-		str = object.toString();
-	}
-	return str;
 };
 
 var errorDomain = domain.create();
