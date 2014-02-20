@@ -25,7 +25,15 @@ var Server = function (port, secretKey, expiryAccuracy) {
 		if (value.event == 'listening') {
 			self.emit('ready');
 		} else if (value.event == 'error') {
-			self.emit('error', value.data);
+			var err;
+			if (value.data && value.data.message) {
+				err = new Error();
+				err.message = value.data.message;
+				err.stack = value.data.stack;
+			} else {
+				err = value.data;
+			}
+			self.emit('error', err);
 		}
 	});
 	
@@ -229,7 +237,7 @@ var Client = function (port, host, secretKey, timeout) {
 	};
 	
 	self.watchOnce = function (event, handler, ackCallback) {
-		if (self.isWatching(event, handler)) {
+		if (self.isWatching(event)) {
 			if (ackCallback) {
 				self._errorDomain.run(function () {
 					ackCallback();
