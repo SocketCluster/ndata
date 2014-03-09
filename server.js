@@ -1,7 +1,6 @@
-var PORT = process.argv[2];
+var PORT = parseInt(process.argv[2]);
 var SECRET_KEY = process.argv[3] || null;
 var EXPIRY_ACCURACY = process.argv[4] || 1000;
-var HOST = '127.0.0.1';
 
 var initialized = {};
 
@@ -331,7 +330,7 @@ server.on('listening', function () {
 	process.send({event: 'listening'});
 });
 
-server.listen(PORT, HOST);
+server.listen(PORT);
 
 setInterval(function () {
 	var keys = dataExpirer.extractExpiredKeys();
