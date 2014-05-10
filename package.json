@@ -1,7 +1,7 @@
 {
 	"name": "ndata",
 	"description": "nData key-value store",
-	"version": "0.9.34",
+	"version": "0.9.35",
 	"author": {
 		"name": "JF Gros-Dubois",
 		"email": "flashthink@gmail.com"
@@ -11,9 +11,9 @@
 		"email": "flashthink@gmail.com"
 	}],
 	"dependencies": {
-		"expirymanager": "0.9.1",
-		"fleximap": "0.9.2",
-		"ncom": "0.9.2"		
+		"expirymanager": ">= 0.9.1",
+		"fleximap": ">= 0.9.2",
+		"ncom": ">= 0.9.3"		
 	},
 	"devDependencies": {},
 	"keywords": [
