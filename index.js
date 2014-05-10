@@ -2,7 +2,6 @@ var fork = require('child_process').fork;
 var EventEmitter = require('events').EventEmitter;
 var ComSocket = require('ncom').ComSocket;
 var FlexiMap = require('fleximap').FlexiMap;
-var json = require('json');
 var domain = require('domain');
 
 var DEFAULT_PORT = 9435;
@@ -193,10 +192,6 @@ var Client = function (port, host, secretKey, timeout) {
 		} else {
 			self._pendingActions.push(arguments);
 		}
-	};
-	
-	self.stringify = function (value) {
-		return json.stringify(value);
 	};
 	
 	self.extractKeys = function (object) {
