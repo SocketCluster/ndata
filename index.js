@@ -169,8 +169,8 @@ var Client = function (port, host, secretKey, timeout) {
 				callback = self._errorDomain.bind(callback);
 				var request = {callback: callback, command: command};
 				self._commandMap[command.id] = request;
-				
-				var timeout = setTimeout(function () {
+
+				request.timeout = setTimeout(function () {
 					var error = 'nData Error - The ' + command.action + ' action timed out';
 					delete request.callback;
 					if (self._commandMap.hasOwnProperty(command.id)) {
@@ -178,8 +178,6 @@ var Client = function (port, host, secretKey, timeout) {
 					}
 					callback(error);
 				}, self._timeout);
-				
-				request.timeout = timeout;
 			}
 			self._socket.write(command);
 		} else {
