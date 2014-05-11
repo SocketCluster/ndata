@@ -88,8 +88,7 @@ var Client = function (port, host, secretKey, timeout) {
 	self._broadcast = function (event, value) {
 		if (self._watchMap.hasKey(event)) {
 			var watchers = self._watchMap.get(event);
-			var i;
-			for (i in watchers) {
+			for (var i in watchers) {
 				if (watchers[i] instanceof Function) {
 					watchers[i](value);
 				}
@@ -98,8 +97,7 @@ var Client = function (port, host, secretKey, timeout) {
 	};
 	
 	self._execPending = function () {
-		var i;
-		for (i in self._pendingActions) {
+		for (var i in self._pendingActions) {
 			self._exec.apply(self, self._pendingActions[i]);
 		}
 		self._pendingActions = [];
@@ -199,9 +197,8 @@ var Client = function (port, host, secretKey, timeout) {
 	};
 	
 	self.extractValues = function (object) {
-		var i;
 		var array = [];
-		for (i in object) {
+		for (var i in object) {
 			array.push(object[i]);
 		}
 		return array;
@@ -301,8 +298,7 @@ var Client = function (port, host, secretKey, timeout) {
 				if (handler) {
 					var newWatchers = [];
 					var watchers = self._watchMap.get(event);
-					var i;
-					for (i in watchers) {
+					for (var i in watchers) {
 						if (watchers[i] != handler) {
 							newWatchers.push(watchers[i]);
 						}

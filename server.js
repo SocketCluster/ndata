@@ -31,8 +31,7 @@ var hasListener = function (socket, event) {
 
 var anyHasListener = function (event) {
 	var sockets = eventMap.get('sockets');
-	var i;
-	for (i in sockets) {
+	for (var i in sockets) {
 		if (eventMap.hasKey(['sockets', i].concat(event))) {
 			return true;
 		}
@@ -241,8 +240,8 @@ var actions = {
 	
 	broadcast: function (command, socket) {
 		var sockets = eventMap.get('sockets');
-		var i, sock, eventKey;
-		for (i in sockets) {
+		var sock, eventKey;
+		for (var i in sockets) {
 			eventKey = ['sockets', i].concat(command.event);
 			if (eventMap.hasKey(eventKey)) {
 				sock = eventMap.get(eventKey);
