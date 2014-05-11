@@ -10,8 +10,8 @@ var HOST = '127.0.0.1';
 var Server = function (port, secretKey, expiryAccuracy) {
 	EventEmitter.call( this );
 	var self = this;
-	
-	var args = [].slice.call(arguments);
+
+	var args = Array.prototype.slice.call(arguments).filter(function(arg) { return !!arg; });
 	
 	self._server = fork(__dirname + '/server.js', args);
 	
