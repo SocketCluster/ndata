@@ -760,7 +760,7 @@ var Client = function (port, host, secretKey, timeout) {
 	};
 	
 	self.end = function (callback) {
-		self.unwatch(null, null, function (err) {
+		self.unwatch(null, null, function () {
 			if (callback) {
 				var disconnectCallback = function () {
 					if (disconnectTimeout) {
