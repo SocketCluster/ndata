@@ -186,12 +186,7 @@ var Client = function (port, host, secretKey, timeout) {
 	};
 	
 	self.extractKeys = function (object) {
-		var i;
-		var array = [];
-		for (i in object) {
-			array.push(i);
-		}
-		return array;
+		return Object.keys(object);
 	};
 	
 	self.extractValues = function (object) {
