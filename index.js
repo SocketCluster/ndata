@@ -212,7 +212,7 @@ var Client = function (port, host, secretKey, timeout) {
 				ackCallback && ackCallback();
 				self.emit('watch');
 			}
-		}
+		};
 		self._exec(command, callback);
 	};
 	
@@ -254,7 +254,7 @@ var Client = function (port, host, secretKey, timeout) {
 				}
 				self.emit('watch');
 			}
-		}
+		};
 		self._exec(command, callback);
 	};
 	
@@ -280,7 +280,7 @@ var Client = function (port, host, secretKey, timeout) {
 				callback && callback();
 				self.emit('unwatch');
 			}
-		}
+		};
 		
 		self._exec(command, cb);
 	};
@@ -305,7 +305,7 @@ var Client = function (port, host, secretKey, timeout) {
 							self._watchMap.remove(event);
 						}
 						ackCallback && ackCallback(err);
-					}
+					};
 					
 					if (newWatchers.length < 1) {
 						self._unwatch(event, callback);
@@ -322,7 +322,7 @@ var Client = function (port, host, secretKey, timeout) {
 							self._watchMap.remove(event);
 						}
 						ackCallback && ackCallback(err);
-					}
+					};
 					self._unwatch(event, callback);
 				}
 			} else {
@@ -768,7 +768,7 @@ var Client = function (port, host, secretKey, timeout) {
 					}
 					callback();
 					self._socket.removeListener('end', disconnectCallback);
-				}
+				};
 				
 				var disconnectTimeout = setTimeout(function () {
 					self._socket.removeListener('end', disconnectCallback);
@@ -780,7 +780,7 @@ var Client = function (port, host, secretKey, timeout) {
 			var setDisconnectStatus = function () {
 				self._socket.removeListener('end', setDisconnectStatus);
 				self._connected = false;
-			}
+			};
 			self._socket.on('end', setDisconnectStatus);
 			self._socket.end();
 		});
