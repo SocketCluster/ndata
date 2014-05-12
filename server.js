@@ -251,7 +251,14 @@ var actions = {
 				}
 			}
 		}
-		send(socket, {id: command.id, type: 'response', action: 'broadcast', value: command.value, event: command.event});
+		
+		var response = {id: command.id, type: 'response', action: 'broadcast', event: command.event};
+		
+		if (command.getValue) {
+			response.value = command.value;
+		}
+		
+		send(socket, response);
 	}
 };
 
