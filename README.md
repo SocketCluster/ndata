@@ -78,7 +78,7 @@ The optional getValue is a boolean which indicates whether or not to get the rem
 The callback is in form: callback(err, value)
 
 - removeRange(keyChain, fromIndex,[ toIndex, getValue,] callback) - Remove a range of values at keyChain between fromIndex and toIndex.
-This function assumes that the value at keyChain is an object or array. The optional getValue argument specified whether or not to return the removed section as an argument to the callback.
+This function assumes that the value at keyChain is an object or array. The optional getValue argument specifies whether or not to return the removed section as an argument to the callback.
 The callback is in form: callback(err, value)
 
 - removeAll(callback) - Clear nData completely.
