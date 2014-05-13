@@ -8,15 +8,10 @@ var DEFAULT_PORT = 9435;
 var HOST = '127.0.0.1';
 
 var Server = function (port, secretKey, expiryAccuracy) {
+	EventEmitter.call( this );
 	var self = this;
-	
-	var args = [];
-	
-	for (var i in arguments) {
-		if (arguments[i]) {
-			args.push(arguments[i]);
-		}
-	}
+
+	var args = Array.prototype.slice.call(arguments).filter(function(arg) { return !!arg; });
 	
 	self._server = fork(__dirname + '/server.js', args);
 	
@@ -93,8 +88,7 @@ var Client = function (port, host, secretKey, timeout) {
 	self._broadcast = function (event, value) {
 		if (self._watchMap.hasKey(event)) {
 			var watchers = self._watchMap.get(event);
-			var i;
-			for (i in watchers) {
+			for (var i in watchers) {
 				if (watchers[i] instanceof Function) {
 					watchers[i](value);
 				}
@@ -103,8 +97,7 @@ var Client = function (port, host, secretKey, timeout) {
 	};
 	
 	self._execPending = function () {
-		var i;
-		for (i in self._pendingActions) {
+		for (var i in self._pendingActions) {
 			self._exec.apply(self, self._pendingActions[i]);
 		}
 		self._pendingActions = [];
@@ -176,8 +169,8 @@ var Client = function (port, host, secretKey, timeout) {
 				callback = self._errorDomain.bind(callback);
 				var request = {callback: callback, command: command};
 				self._commandMap[command.id] = request;
-				
-				var timeout = setTimeout(function () {
+
+				request.timeout = setTimeout(function () {
 					var error = 'nData Error - The ' + command.action + ' action timed out';
 					delete request.callback;
 					if (self._commandMap.hasOwnProperty(command.id)) {
@@ -185,8 +178,6 @@ var Client = function (port, host, secretKey, timeout) {
 					}
 					callback(error);
 				}, self._timeout);
-				
-				request.timeout = timeout;
 			}
 			self._socket.write(command);
 		} else {
@@ -195,18 +186,12 @@ var Client = function (port, host, secretKey, timeout) {
 	};
 	
 	self.extractKeys = function (object) {
-		var i;
-		var array = [];
-		for (i in object) {
-			array.push(i);
-		}
-		return array;
+		return Object.keys(object);
 	};
 	
 	self.extractValues = function (object) {
-		var i;
 		var array = [];
-		for (i in object) {
+		for (var i in object) {
 			array.push(object[i]);
 		}
 		return array;
@@ -227,7 +212,7 @@ var Client = function (port, host, secretKey, timeout) {
 				ackCallback && ackCallback();
 				self.emit('watch');
 			}
-		}
+		};
 		self._exec(command, callback);
 	};
 	
@@ -269,7 +254,7 @@ var Client = function (port, host, secretKey, timeout) {
 				}
 				self.emit('watch');
 			}
-		}
+		};
 		self._exec(command, callback);
 	};
 	
@@ -295,7 +280,7 @@ var Client = function (port, host, secretKey, timeout) {
 				callback && callback();
 				self.emit('unwatch');
 			}
-		}
+		};
 		
 		self._exec(command, cb);
 	};
@@ -306,8 +291,7 @@ var Client = function (port, host, secretKey, timeout) {
 				if (handler) {
 					var newWatchers = [];
 					var watchers = self._watchMap.get(event);
-					var i;
-					for (i in watchers) {
+					for (var i in watchers) {
 						if (watchers[i] != handler) {
 							newWatchers.push(watchers[i]);
 						}
@@ -321,7 +305,7 @@ var Client = function (port, host, secretKey, timeout) {
 							self._watchMap.remove(event);
 						}
 						ackCallback && ackCallback(err);
-					}
+					};
 					
 					if (newWatchers.length < 1) {
 						self._unwatch(event, callback);
@@ -338,7 +322,7 @@ var Client = function (port, host, secretKey, timeout) {
 							self._watchMap.remove(event);
 						}
 						ackCallback && ackCallback(err);
-					}
+					};
 					self._unwatch(event, callback);
 				}
 			} else {
@@ -776,7 +760,7 @@ var Client = function (port, host, secretKey, timeout) {
 	};
 	
 	self.end = function (callback) {
-		self.unwatch(null, null, function (err) {
+		self.unwatch(null, null, function () {
 			if (callback) {
 				var disconnectCallback = function () {
 					if (disconnectTimeout) {
@@ -784,7 +768,7 @@ var Client = function (port, host, secretKey, timeout) {
 					}
 					callback();
 					self._socket.removeListener('end', disconnectCallback);
-				}
+				};
 				
 				var disconnectTimeout = setTimeout(function () {
 					self._socket.removeListener('end', disconnectCallback);
@@ -796,7 +780,7 @@ var Client = function (port, host, secretKey, timeout) {
 			var setDisconnectStatus = function () {
 				self._socket.removeListener('end', setDisconnectStatus);
 				self._connected = false;
-			}
+			};
 			self._socket.on('end', setDisconnectStatus);
 			self._socket.end();
 		});
