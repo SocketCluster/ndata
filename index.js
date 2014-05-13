@@ -8,10 +8,10 @@ var DEFAULT_PORT = 9435;
 var HOST = '127.0.0.1';
 
 var Server = function (port, secretKey, expiryAccuracy) {
-	EventEmitter.call( this );
+	EventEmitter.call(this);
 	var self = this;
 
-	var args = Array.prototype.slice.call(arguments).filter(function(arg) { return !!arg; });
+	var args = Array.prototype.slice.call(arguments).filter(function (arg) { return !!arg; });
 	
 	self._server = fork(__dirname + '/server.js', args);
 	
@@ -687,7 +687,11 @@ var Client = function (port, host, secretKey, timeout) {
 		if (arguments[2] instanceof Function) {
 			callback = arguments[2];
 		} else if (arguments[3] instanceof Function) {
-			options = arguments[2];
+			if (arguments[2] instanceof Object) {
+				options = arguments[2];
+			} else {
+				options.toIndex = arguments[2];
+			}
 			callback = arguments[3];
 		} else {
 			options.toIndex = arguments[2];
