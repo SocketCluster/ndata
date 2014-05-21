@@ -235,7 +235,7 @@ var actions = {
 
   isWatching: function (command, socket) {
     var result = eventMap.hasKey(['sockets', socket.id, command.event]);
-    send(socket, {id: command.id, type: 'response', action: 'isWatching', event: command.event});
+    send(socket, {id: command.id, type: 'response', action: 'isWatching', event: command.event, value: result});
   },
 
   broadcast: function (command, socket) {
