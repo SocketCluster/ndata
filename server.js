@@ -17,38 +17,38 @@ var send = function (socket, object) {
 };
 
 var dataMap = new FlexiMap();
-var eventMap = new FlexiMap();
+var channelMap = new FlexiMap();
 
 var dataExpirer = new ExpiryManager();
 
-var addListener = function (socket, event) {
-  eventMap.set(['sockets', socket.id].concat(event), socket);
+var addListener = function (socket, channel) {
+  channelMap.set(['sockets', socket.id].concat(channel), socket);
 };
 
-var hasListener = function (socket, event) {
-  return eventMap.hasKey(['sockets', socket.id].concat(event));
+var hasListener = function (socket, channel) {
+  return channelMap.hasKey(['sockets', socket.id].concat(channel));
 };
 
-var anyHasListener = function (event) {
-  var sockets = eventMap.get('sockets');
+var anyHasListener = function (channel) {
+  var sockets = channelMap.get('sockets');
   for (var i in sockets) {
-    if (eventMap.hasKey(['sockets', i].concat(event))) {
+    if (channelMap.hasKey(['sockets', i].concat(channel))) {
       return true;
     }
   }
   return false;
 };
 
-var removeListener = function (socket, event) {
-  eventMap.remove(['sockets', socket.id].concat(event));
+var removeListener = function (socket, channel) {
+  channelMap.remove(['sockets', socket.id].concat(channel));
 };
 
 var removeAllListeners = function (socket) {
-  eventMap.remove(['sockets', socket.id]);
+  channelMap.remove(['sockets', socket.id]);
 };
 
 var getListeners = function (socket) {
-  return eventMap.get(['sockets', socket.id]);
+  return channelMap.get(['sockets', socket.id]);
 };
 
 var run = function (query, baseKey) {
@@ -59,7 +59,7 @@ var run = function (query, baseKey) {
     rebasedDataMap = dataMap;
   }
 
-  return Function('"use strict"; return (' + query + ')(arguments[0], arguments[1], arguments[2]);')(rebasedDataMap, dataExpirer, eventMap);
+  return Function('"use strict"; return (' + query + ')(arguments[0], arguments[1], arguments[2]);')(rebasedDataMap, dataExpirer, channelMap);
 };
 
 var actions = {
@@ -209,49 +209,41 @@ var actions = {
   hasKey: function (command, socket) {
     send(socket, {id: command.id, type: 'response', action: 'hasKey', value: dataMap.hasKey(command.key)});
   },
-
-  watch: function (command, socket) {
-    addListener(socket, command.event);
-    send(socket, {id: command.id, type: 'response', action: 'watch', event: command.event});
+  
+  subscribe: function (command, socket) {
+    addListener(socket, command.channel);
+    send(socket, {id: command.id, type: 'response', action: 'subscribe', channel: command.channel});
   },
 
-  watchExclusive: function (command, socket) {
-    var listening = anyHasListener(command.event);
-    if (!listening) {
-      addListener(socket, command.event);
-    }
-    send(socket, {id: command.id, type: 'response', action: 'watchExclusive', event: command.event, value: listening});
-  },
-
-  unwatch: function (command, socket) {
-    if (command.event) {
-      removeListener(socket, command.event);
+  unsubscribe: function (command, socket) {
+    if (command.channel) {
+      removeListener(socket, command.channel);
     } else {
       removeAllListeners(socket);
     }
 
-    send(socket, {id: command.id, type: 'response', action: 'unwatch', event: command.event});
+    send(socket, {id: command.id, type: 'response', action: 'unsubscribe', channel: command.channel});
   },
 
-  isWatching: function (command, socket) {
-    var result = eventMap.hasKey(['sockets', socket.id, command.event]);
-    send(socket, {id: command.id, type: 'response', action: 'isWatching', event: command.event, value: result});
+  isSubscribed: function (command, socket) {
+    var result = channelMap.hasKey(['sockets', socket.id, command.channel]);
+    send(socket, {id: command.id, type: 'response', action: 'isSubscribed', channel: command.channel, value: result});
   },
 
-  broadcast: function (command, socket) {
-    var sockets = eventMap.get('sockets');
-    var sock, eventKey;
+  publish: function (command, socket) {
+    var sockets = channelMap.get('sockets');
+    var sock, channelKey;
     for (var i in sockets) {
-      eventKey = ['sockets', i].concat(command.event);
-      if (eventMap.hasKey(eventKey)) {
-        sock = eventMap.get(eventKey);
+      channelKey = ['sockets', i].concat(command.channel);
+      if (channelMap.hasKey(channelKey)) {
+        sock = channelMap.get(channelKey);
         if (sock instanceof com.ComSocket) {
-          send(sock, {type: 'event', event: command.event, value: command.value});
+          send(sock, {type: 'message', channel: command.channel, value: command.value});
         }
       }
     }
 
-    var response = {id: command.id, type: 'response', action: 'broadcast', event: command.event};
+    var response = {id: command.id, type: 'response', action: 'publish', channel: command.channel};
 
     if (command.getValue) {
       response.value = command.value;

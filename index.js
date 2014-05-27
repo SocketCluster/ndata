@@ -10,9 +10,10 @@ var HOST = '127.0.0.1';
 var Server = function (port, secretKey, expiryAccuracy) {
   EventEmitter.call(this);
   var self = this;
-
+  
   var args = Array.prototype.slice.call(arguments).filter(function (arg) { return !!arg; });
 
+  self.port = port;
   self._server = fork(__dirname + '/server.js', args);
 
   self._server.on('message', function (value) {
@@ -51,6 +52,7 @@ module.exports.createServer = function (port, secretKey, expiryAccuracy) {
 
 var Client = function (port, host, secretKey, timeout) {
   var self = this;
+  
   self._errorDomain = domain.createDomain();
 
   self._errorDomain.on('error', function (err) {
@@ -68,7 +70,8 @@ var Client = function (port, host, secretKey, timeout) {
   var retryCount = 0;
   var retryInterval = 1000;
 
-  self._watchMap = new FlexiMap();
+  self.port = port;
+  self._subMap = new FlexiMap();
   self._commandMap = {};
   self._pendingActions = [];
 
@@ -83,17 +86,6 @@ var Client = function (port, host, secretKey, timeout) {
   self._genID = function () {
     self._curID = (self._curID + 1) % self.MAX_ID;
     return 'n' + self._curID;
-  };
-
-  self._broadcast = function (event, value) {
-    if (self._watchMap.hasKey(event)) {
-      var watchers = self._watchMap.get(event);
-      for (var i in watchers) {
-        if (watchers[i] instanceof Function) {
-          watchers[i](value);
-        }
-      }
-    }
   };
 
   self._execPending = function () {
@@ -149,14 +141,14 @@ var Client = function (port, host, secretKey, timeout) {
 
         if (response.value !== undefined) {
           callback(error, response.value);
-        } else if (action == 'watch' || action == 'unwatch') {
+        } else if (action == 'subscribe' || action == 'unsubscribe') {
           callback(error);
         } else {
           callback(error);
         }
       }
-    } else if (response.type == 'event') {
-      self._broadcast(response.event, response.value);
+    } else if (response.type == 'message') {
+      self.emit('message', response.channel, response.value);
     }
   });
 
@@ -197,145 +189,68 @@ var Client = function (port, host, secretKey, timeout) {
     return array;
   };
 
-  self.watch = function (event, handler, ackCallback) {
-    var command = {
-      event: event,
-      action: 'watch'
-    };
-
-    var callback = function (err) {
-      if (err) {
-        ackCallback && ackCallback(err);
-        self.emit('watchfail');
-      } else {
-        self._watchMap.add(event, self._errorDomain.bind(handler));
-        ackCallback && ackCallback();
-        self.emit('watch');
-      }
-    };
-    self._exec(command, callback);
-  };
-
-  self.watchOnce = function (event, handler, ackCallback) {
-    if (self.isWatching(event)) {
+  self.subscribe = function (channel, ackCallback) {
+    if (self.isSubscribed(channel)) {
       if (ackCallback) {
         self._errorDomain.run(function () {
           ackCallback();
         });
       }
-      self.emit('watch');
     } else {
-      self.watch(event, handler, ackCallback);
-    }
-  };
-
-  self.watchExclusive = function (event, handler, ackCallback) {
-    var command = {
-      event: event,
-      action: 'watchExclusive'
-    };
-
-    var callback = function (err, alreadyWatching) {
-      if (err) {
-        if (ackCallback) {
-          self._errorDomain.run(function () {
-            ackCallback(err, alreadyWatching);
-          });
-        }
-        self.emit('watchfail');
-      } else {
-        if (!alreadyWatching) {
-          self._watchMap.add(event, self._errorDomain.bind(handler));
-        }
-        if (ackCallback) {
-          self._errorDomain.run(function () {
-            ackCallback(null, alreadyWatching);
-          });
-        }
-        self.emit('watch');
-      }
-    };
-    self._exec(command, callback);
-  };
-
-  self.isWatching = function (event, handler) {
-    if (handler) {
-      return self._watchMap.hasValue(event, handler);
-    } else {
-      return self._watchMap.hasKey(event);
-    }
-  };
-
-  self._unwatch = function (event, callback) {
-    var command = {
-      action: 'unwatch',
-      event: event
-    };
-
-    var cb = function (error) {
-      if (error) {
-        callback && callback(error);
-        self.emit('unwatchfail');
-      } else {
-        callback && callback();
-        self.emit('unwatch');
-      }
-    };
-
-    self._exec(command, cb);
-  };
-
-  self.unwatch = function (event, handler, ackCallback) {
-    if (event) {
-      if (self._watchMap.hasKey(event)) {
-        if (handler) {
-          var newWatchers = [];
-          var watchers = self._watchMap.get(event);
-          for (var i in watchers) {
-            if (watchers[i] != handler) {
-              newWatchers.push(watchers[i]);
-            }
-          }
-
-          var callback = function (err) {
-            if (!err) {
-              self._watchMap.set(event, newWatchers);
-            }
-            if (self._watchMap.count(event) < 1) {
-              self._watchMap.remove(event);
-            }
-            ackCallback && ackCallback(err);
-          };
-
-          if (newWatchers.length < 1) {
-            self._unwatch(event, callback);
-          } else {
-            self._watchMap.set(event, newWatchers);
-            if (self._watchMap.count(event) < 1) {
-              self._watchMap.remove(event);
-            }
-            ackCallback && ackCallback();
-          }
+    
+      var command = {
+        channel: channel,
+        action: 'subscribe'
+      };
+      
+      var callback = function (err) {
+        if (err) {
+          ackCallback && ackCallback(err);
+          self.emit('subscribefail');
         } else {
-          var callback = function (err) {
-            if (!err) {
-              self._watchMap.remove(event);
-            }
-            ackCallback && ackCallback(err);
-          };
-          self._unwatch(event, callback);
+          self._subMap.set(channel, true);
+          ackCallback && ackCallback();
+          self.emit('subscribe');
         }
-      } else {
-        self._unwatch(event, ackCallback);
-      }
-    } else {
-      self._watchMap.removeAll();
-      self._unwatch(null, ackCallback);
+      };
+      self._exec(command, callback);
     }
   };
 
-  self.broadcast = function () {
-    var event = arguments[0];
+  self.unsubscribe = function (channel, ackCallback) {
+    if (self.isSubscribed(channel)) {
+      var command = {
+        action: 'unsubscribe',
+        channel: channel
+      };
+
+      var cb = function (err) {
+        if (err) {
+          ackCallback && ackCallback(err);
+          self.emit('unsubscribefail');
+        } else {
+          self._subMap.remove(channel);
+          ackCallback && ackCallback();
+          self.emit('unsubscribe');
+        }
+      };
+
+      self._exec(command, cb);
+    } else {
+      if (ackCallback) {
+        self._errorDomain.run(function () {
+          ackCallback();
+        });
+      }
+    }
+  };
+  
+  self.isSubscribed = function (channel) {
+    return self._subMap.hasKey(channel);
+  };
+
+  self.publish = function () {
+    var channel = arguments[0];
     var value = null;
     var callback = null;
     if (arguments[1] instanceof Function) {
@@ -346,8 +261,8 @@ var Client = function (port, host, secretKey, timeout) {
     }
 
     var command = {
-      action: 'broadcast',
-      event: event,
+      action: 'publish',
+      channel: channel,
       value: value
     };
 
@@ -764,7 +679,7 @@ var Client = function (port, host, secretKey, timeout) {
   };
 
   self.end = function (callback) {
-    self.unwatch(null, null, function () {
+    self.unsubscribe(null, function () {
       if (callback) {
         var disconnectCallback = function () {
           if (disconnectTimeout) {

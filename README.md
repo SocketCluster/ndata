@@ -99,15 +99,14 @@ The callback is in form: callback(err, value)
 
 - count(keyChain, callback) - Count the number of elements at keyChain; callback is in form: callback(err, value)
 
-- watch(event, handler, ackCallback) - Watch for an event on nData, handler is a callback in the form handler(value) where value is a value sent with the event.
-Note that you can watch the same event multiple times (even using the same handler).
+- subscribe(channel, ackCallback) - Watch a channel on nData. This is the nData equivalent to Redis' subscribe().
+When an event happens on any watched channel, you can handle it using nDataClient.on('event', handler)
 
-- watchOnce(event, handler, ackCallback) - As above except that it will only trigger a single handler (from the last call to watchOnce).
+- unsubscribe(channel, ackCallback) - Unwatch the specified channel. If channel is not specified, it will unsubscribe from all channels.
 
-- unwatch(event, handler, ackCallback) - Unwatch the specified event. If handler is not specified, it will remove handlers associated with the specified event.
-If event is not specified, it will remove all nData events.
+- on(event, listener) - Listen to events on nData, you should listen to the 'message' event to handle messages from subscribed channels.
 
-- broadcast(event, value, callback) - Broadcast an event with the specified associated value.
+- publish(channel, message, callback) - Publish an event with the specified associated value.
 
 ## Keys
 
