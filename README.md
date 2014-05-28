@@ -129,7 +129,7 @@ dataClient.get(['this', 'is', a'], function(value) {
 
 The above would output: {deep:{key:'Hello world'}}
 
-Nombo generally doesn't restrict you from doing anything you want. It is perfectly OK to call this:
+nData generally doesn't restrict you from doing anything you want. Following from the previous example, it is perfectly OK to call this:
 
 dataClient.add(['this', 'is', 'a'], 'foo');
 
@@ -143,4 +143,4 @@ dataClient.get(['this', 'is', 'a', 0], function(value) {
 });
 
 The output here will be 'foo'.
-You can also add entire JSON-compatible objects as value. Objects with circular references are also valid.
+You can also add entire JSON-compatible objects as value.
