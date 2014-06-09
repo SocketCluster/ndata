@@ -7,7 +7,7 @@ var domain = require('domain');
 var DEFAULT_PORT = 9435;
 var HOST = '127.0.0.1';
 
-var Server = function (port, secretKey, expiryAccuracy) {
+var Server = function (port, secretKey, expiryAccuracy, storeControllerPath) {
   EventEmitter.call(this);
   var self = this;
   
@@ -43,11 +43,11 @@ var Server = function (port, secretKey, expiryAccuracy) {
 
 Server.prototype = Object.create(EventEmitter.prototype);
 
-module.exports.createServer = function (port, secretKey, expiryAccuracy) {
+module.exports.createServer = function (port, secretKey, expiryAccuracy, storeControllerPath) {
   if (!port) {
     port = DEFAULT_PORT;
   }
-  return new Server(port, secretKey, expiryAccuracy);
+  return new Server(port, secretKey, expiryAccuracy, storeControllerPath);
 };
 
 var Client = function (port, host, secretKey, timeout) {
