@@ -17,6 +17,24 @@ var com = require('ncom');
 var ExpiryManager = require('expirymanager').ExpiryManager;
 var FlexiMap = require('fleximap').FlexiMap;
 
+var errorHandler = function (err) {
+  var error;
+
+  if (err.stack) {
+    error = {
+      message: err.message,
+      stack: err.stack
+    };
+  } else {
+    error = err;
+  }
+
+  process.send({event: 'error', data: error});
+};
+
+var errorDomain = domain.create();
+errorDomain.on('error', errorHandler);
+
 var escapeStr = '\\u001b';
 var escapeArr = escapeStr.split('');
 
@@ -156,9 +174,13 @@ Store.prototype.publish = function (channel, message) {
 };
 
 var nDataStore = new Store();
+
 if (STORE_CONTROLLER) {
-  STORE_CONTROLLER.run(nDataStore);
+  errorDomain.run(function () {
+    STORE_CONTROLLER.run(nDataStore);
+  });
 }
+errorDomain.add(nDataStore);
 
 var actions = {
   init: function (command, socket) {
@@ -346,24 +368,6 @@ var genID = function () {
 };
 
 var server = com.createServer();
-
-var errorHandler = function (err) {
-  var error;
-
-  if (err.stack) {
-    error = {
-      message: err.message,
-      stack: err.stack
-    };
-  } else {
-    error = err;
-  }
-
-  process.send({event: 'error', data: error});
-};
-
-var errorDomain = domain.create();
-errorDomain.on('error', errorHandler);
 
 var handleConnection = errorDomain.bind(function (sock) {
   errorDomain.add(sock);
