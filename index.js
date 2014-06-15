@@ -96,6 +96,7 @@ var Client = function (port, host, secretKey, timeout) {
   };
 
   self._connectHandler = function () {
+    retryCount = 0;
     if (secretKey) {
       var command = {
         action: 'init',
@@ -122,7 +123,7 @@ var Client = function (port, host, secretKey, timeout) {
     if (++retryCount <= maxRetries) {
       setTimeout(self._connect, retryInterval);
     } else {
-      self.emit('connect_failed');
+      self.emit('error', new Error('Cannot connect to nData server - Maximum connection attempts exceeded'));
     }
   };
 
