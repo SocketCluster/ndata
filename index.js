@@ -66,7 +66,7 @@ var Client = function (port, host, secretKey, timeout) {
     self._timeout = 10000;
   }
 
-  var maxRetries = 4;
+  var maxRetries = 6;
   var retryCount = 0;
   var retryInterval = 1000;
 
@@ -94,9 +94,42 @@ var Client = function (port, host, secretKey, timeout) {
     }
     self._pendingActions = [];
   };
+  
+  self._getAllChannels = function (channelMap) {
+    if (channelMap === true) {
+      return [[]];
+    } else {
+      var channels = [];
+      var subChannels;
+      for (var key in channelMap) {
+        subChannels = self._getAllChannels(channelMap[key]);
+        for (var i in subChannels) {
+          channels.push([key].concat(subChannels[i]));
+        }
+      }
+      return channels;
+    }
+  };
+  
+  // Recovers subscriptions after nData server crash
+  self._resubscribeAll = function () {
+    var hasFailed = false;
+    var handleResubscribe = function (err) {
+      if (err && !hasFailed) {
+        hasFailed = true;
+        self.emit('error', new Error('Failed to resubscribe to nData server channels'));
+      }
+    };
+    var channelMap = self._subMap.getAll();
+    var channels = self._getAllChannels(channelMap);
+    for (var i in channels) {
+      self.subscribe(channels[i], handleResubscribe, true);
+    }
+  };
 
   self._connectHandler = function () {
     retryCount = 0;
+    
     if (secretKey) {
       var command = {
         action: 'init',
@@ -104,11 +137,13 @@ var Client = function (port, host, secretKey, timeout) {
       };
       self._connected = true;
       self._exec(command, function (data) {
+        self._resubscribeAll();
         self._execPending();
         self.emit('ready');
       });
     } else {
       self._connected = true;
+      self._resubscribeAll();
       self._execPending();
       self.emit('ready');
     }
@@ -117,13 +152,21 @@ var Client = function (port, host, secretKey, timeout) {
   self._connect = function () {
     self._socket.connect(port, host, self._connectHandler);
   };
+  
+  var isHandlingError = false;
 
   var handleError = function () {
     self._connected = false;
-    if (++retryCount <= maxRetries) {
-      setTimeout(self._connect, retryInterval);
-    } else {
-      self.emit('error', new Error('Cannot connect to nData server - Maximum connection attempts exceeded'));
+    if (!isHandlingError) {
+      if (++retryCount <= maxRetries) {
+        isHandlingError = true;
+        setTimeout(function () {
+          isHandlingError = false;
+          self._connect();
+        }, retryInterval);
+      } else {
+        self.emit('error', new Error('Cannot connect to nData server - Maximum connection attempts exceeded'));
+      }
     }
   };
 
@@ -190,15 +233,14 @@ var Client = function (port, host, secretKey, timeout) {
     return array;
   };
 
-  self.subscribe = function (channel, ackCallback) {
-    if (self.isSubscribed(channel)) {
+  self.subscribe = function (channel, ackCallback, force) {
+    if (!force && self.isSubscribed(channel)) {
       if (ackCallback) {
         self._errorDomain.run(function () {
           ackCallback();
         });
       }
     } else {
-    
       var command = {
         channel: channel,
         action: 'subscribe'

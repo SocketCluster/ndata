@@ -13,7 +13,7 @@
   "dependencies": {
     "expirymanager": ">= 0.9.1",
     "fleximap": ">= 0.9.2",
-    "ncom": ">= 0.9.3"
+    "ncom": ">= 0.9.4"
   },
   "devDependencies": {},
   "keywords": [
