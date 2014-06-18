@@ -11,10 +11,10 @@ var Server = function (port, secretKey, expiryAccuracy, storeControllerPath) {
   EventEmitter.call(this);
   var self = this;
   
-  var args = Array.prototype.slice.call(arguments).filter(function (arg) { return !!arg; });
+  var stringArgs = JSON.stringify(Array.prototype.slice.call(arguments));
 
   self.port = port;
-  self._server = fork(__dirname + '/server.js', args);
+  self._server = fork(__dirname + '/server.js', [stringArgs]);
 
   self._server.on('message', function (value) {
     if (value.event == 'listening') {

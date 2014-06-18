@@ -1,7 +1,9 @@
-var PORT = parseInt(process.argv[2]);
-var SECRET_KEY = process.argv[3] || null;
-var EXPIRY_ACCURACY = process.argv[4] || 1000;
-var STORE_CONTROLLER_PATH = process.argv[5] || null;
+var args = JSON.parse(process.argv[2]);
+
+var PORT = parseInt(args[0]);
+var SECRET_KEY = args[1] || null;
+var EXPIRY_ACCURACY = args[2] || 1000;
+var STORE_CONTROLLER_PATH = args[3] || null;
 
 var STORE_CONTROLLER = null;
 if (STORE_CONTROLLER_PATH) {
