@@ -114,16 +114,19 @@ var Client = function (port, host, secretKey, timeout) {
   // Recovers subscriptions after nData server crash
   self._resubscribeAll = function () {
     var hasFailed = false;
-    var handleResubscribe = function (err) {
-      if (err && !hasFailed) {
-        hasFailed = true;
-        self.emit('error', new Error('Failed to resubscribe to nData server channels'));
+    var handleResubscribe = function (channel, err) {
+      if (err) {
+        self._subMap.remove(channel);
+        if (!hasFailed) {
+          hasFailed = true;
+          self.emit('error', new Error('Failed to resubscribe to nData server channels'));
+        }
       }
     };
     var channelMap = self._subMap.getAll();
     var channels = self._getAllChannels(channelMap);
     for (var i in channels) {
-      self.subscribe(channels[i], handleResubscribe, true);
+      self.subscribe(channels[i], handleResubscribe.bind(self, channels[i]), true);
     }
   };
 
@@ -220,6 +223,10 @@ var Client = function (port, host, secretKey, timeout) {
       self._pendingActions.push(arguments);
     }
   };
+  
+  self.isConnected = function() {
+    return self._connected;
+  };
 
   self.extractKeys = function (object) {
     return Object.keys(object);
@@ -261,7 +268,9 @@ var Client = function (port, host, secretKey, timeout) {
   };
 
   self.unsubscribe = function (channel, ackCallback) {
-    if (self.isSubscribed(channel)) {
+    // No need to unsubscribe if the server is disconnected
+    // The server cleans up automatically in case of disconnection
+    if (self.isSubscribed(channel) && self._connected) {
       var command = {
         action: 'unsubscribe',
         channel: channel
@@ -280,6 +289,7 @@ var Client = function (port, host, secretKey, timeout) {
 
       self._exec(command, cb);
     } else {
+      self._subMap.remove(channel);
       if (ackCallback) {
         self._errorDomain.run(function () {
           ackCallback();
