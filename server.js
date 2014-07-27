@@ -1,11 +1,12 @@
 var args = JSON.parse(process.argv[2]);
 
-var PORT = parseInt(args[0]);
-var SECRET_KEY = args[1] || null;
-var EXPIRY_ACCURACY = args[2] || 1000;
-var STORE_CONTROLLER_PATH = args[3] || null;
+var PORT = parseInt(args.port);
+var SECRET_KEY = args.secretKey || null;
+var EXPIRY_ACCURACY = args.expiryAccuracy || 1000;
+var STORE_CONTROLLER_PATH = args.storeControllerPath || null;
+var DOWNGRADE_TO_USER = args.downgradeToUser;
 
-var STORE_CONTROLLER = null;
+var STORE_CONTROLLER;
 if (STORE_CONTROLLER_PATH) {
   STORE_CONTROLLER = require(STORE_CONTROLLER_PATH);
 }
@@ -36,6 +37,16 @@ var errorHandler = function (err) {
 
 var errorDomain = domain.create();
 errorDomain.on('error', errorHandler);
+
+if (DOWNGRADE_TO_USER && process.setuid) {
+  try {
+    process.setuid(DOWNGRADE_TO_USER);
+  } catch (err) {
+    errorDomain.emit('error', new Error('Could not downgrade to user "' + DOWNGRADE_TO_USER +
+      '" - Either this user does not exist or the current process does not have the permission' +
+      ' to switch to it.'));
+  }
+}
 
 var escapeStr = '\\u001b';
 var escapeArr = escapeStr.split('');

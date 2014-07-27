@@ -7,13 +7,13 @@ var domain = require('domain');
 var DEFAULT_PORT = 9435;
 var HOST = '127.0.0.1';
 
-var Server = function (port, secretKey, expiryAccuracy, storeControllerPath) {
+var Server = function (options) {
   EventEmitter.call(this);
   var self = this;
   
-  var stringArgs = JSON.stringify(Array.prototype.slice.call(arguments));
+  var stringArgs = JSON.stringify(options);
 
-  self.port = port;
+  self.port = options.port;
   self._server = fork(__dirname + '/server.js', [stringArgs]);
 
   self._server.on('message', function (value) {
@@ -43,15 +43,23 @@ var Server = function (port, secretKey, expiryAccuracy, storeControllerPath) {
 
 Server.prototype = Object.create(EventEmitter.prototype);
 
-module.exports.createServer = function (port, secretKey, expiryAccuracy, storeControllerPath) {
-  if (!port) {
-    port = DEFAULT_PORT;
+module.exports.createServer = function (options) {
+  if (!options) {
+    options = {};
   }
-  return new Server(port, secretKey, expiryAccuracy, storeControllerPath);
+  if (!options.port) {
+    options.port = DEFAULT_PORT;
+  }
+  return new Server(options);
 };
 
-var Client = function (port, host, secretKey, timeout) {
+var Client = function (options) {
   var self = this;
+  
+  var port = options.port;
+  var host = options.host;
+  var secretKey = options.secretKey;
+  var timeout = options.timeout;
   
   self._errorDomain = domain.createDomain();
 
@@ -761,9 +769,15 @@ var Client = function (port, host, secretKey, timeout) {
 
 Client.prototype = Object.create(EventEmitter.prototype);
 
-module.exports.createClient = function (port, secretKey) {
-  if (!port) {
-    port = DEFAULT_PORT;
+module.exports.createClient = function (options) {
+  if (!options) {
+    options = {};
   }
-  return new Client(port, HOST, secretKey);
+  if (!options.port) {
+    options.port = DEFAULT_PORT;
+  }
+  if (!options.host) {
+    options.host = HOST;
+  }
+  return new Client(options);
 };

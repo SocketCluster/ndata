@@ -19,7 +19,7 @@ Firstly, launch a new nData server. If you're using the node cluster module, you
 from the master process and then interact with it using nData clients.
 
 To launch the server, use:
-var dataServer = ndata.createServer(port, secretKey)
+var dataServer = ndata.createServer({port: 9000, secretKey: 'mySecretKey'})
 
 The secretKey argument is optional; you should use it if you want to restrict access to the server.
 If you're running a node cluster, you may want to use a random key and distribute it to all the workers so that only
@@ -27,7 +27,7 @@ your application can interact with the nData server.
 
 Once the server is setup, you should create clients to interact with it. **Make sure that the server is running before creating clients; listen for the 'ready' event on the server.**
 To create a client use:
-var dataClient = ndata.createClient(port, secretKey);
+var dataClient = ndata.createClient({port: 9000, secretKey: 'mySecretKey'});
 
 The port and secret key must match those supplied to the createServer function.
 

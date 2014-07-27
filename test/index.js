@@ -1,8 +1,8 @@
 var ndata = require('../index');
 var assert = require('assert');
 
-var server = ndata.createServer(9000);
-var clientA = ndata.createClient(9000);
+var server = ndata.createServer({port: 9000});
+var clientA = ndata.createClient({port: 9000});
 
 console.log('Running tests...');
 
