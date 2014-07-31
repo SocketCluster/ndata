@@ -13,7 +13,11 @@ var Server = function (options) {
   
   var stringArgs = JSON.stringify(options);
 
-  self.port = options.port;
+  self.socketPath = options.socketPath
+  if (!self.socketPath) {
+    self.port = options.port;
+  }
+  
   self._server = fork(__dirname + '/server.js', [stringArgs]);
 
   self._server.on('message', function (value) {
@@ -47,7 +51,7 @@ module.exports.createServer = function (options) {
   if (!options) {
     options = {};
   }
-  if (!options.port) {
+  if (!options.socketPath && !options.port) {
     options.port = DEFAULT_PORT;
   }
   return new Server(options);
@@ -56,10 +60,12 @@ module.exports.createServer = function (options) {
 var Client = function (options) {
   var self = this;
   
-  var port = options.port;
-  var host = options.host;
   var secretKey = options.secretKey;
   var timeout = options.timeout;
+  
+  self.socketPath = options.socketPath;
+  self.port = options.port;
+  self.host = options.host;
   
   self._errorDomain = domain.createDomain();
 
@@ -78,7 +84,6 @@ var Client = function (options) {
   var retryCount = 0;
   var retryInterval = 1000;
 
-  self.port = port;
   self._subMap = new FlexiMap();
   self._commandMap = {};
   self._pendingActions = [];
@@ -161,7 +166,11 @@ var Client = function (options) {
   };
 
   self._connect = function () {
-    self._socket.connect(port, host, self._connectHandler);
+    if (self.socketPath) {
+      self._socket.connect(self.socketPath, self._connectHandler);
+    } else {
+      self._socket.connect(self.port, self.host, self._connectHandler);
+    }
   };
   
   var isHandlingError = false;
@@ -773,10 +782,10 @@ module.exports.createClient = function (options) {
   if (!options) {
     options = {};
   }
-  if (!options.port) {
+  if (!options.socketPath && !options.port) {
     options.port = DEFAULT_PORT;
   }
-  if (!options.host) {
+  if (!options.socketPath && !options.host) {
     options.host = HOST;
   }
   return new Client(options);

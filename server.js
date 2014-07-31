@@ -1,9 +1,13 @@
 var args = JSON.parse(process.argv[2]);
 
-var PORT = parseInt(args.port);
-var SECRET_KEY = args.secretKey || null;
+var PORT;
+if (args.port) {
+  PORT = parseInt(args.port);
+}
+var SOCKET_PATH = args.socketPath;
+var SECRET_KEY = args.secretKey;
 var EXPIRY_ACCURACY = args.expiryAccuracy || 1000;
-var STORE_CONTROLLER_PATH = args.storeControllerPath || null;
+var STORE_CONTROLLER_PATH = args.storeControllerPath;
 var DOWNGRADE_TO_USER = args.downgradeToUser;
 
 var STORE_CONTROLLER;
@@ -428,7 +432,11 @@ server.on('listening', function () {
   process.send({event: 'listening'});
 });
 
-server.listen(PORT);
+if (SOCKET_PATH) {
+  server.listen(SOCKET_PATH);
+} else {
+  server.listen(PORT);
+}
 
 setInterval(function () {
   var keys = dataExpirer.extractExpiredKeys();
