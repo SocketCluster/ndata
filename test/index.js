@@ -170,6 +170,7 @@ clientA.set(['check', 'expire', 'key'], 'some data', function(err) {
       assert(JSON.stringify(value) == JSON.stringify(expected));
 
       console.log('All tests passed!');
+      process.exit();
     });
   }, 11000);
 });
