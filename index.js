@@ -70,6 +70,9 @@ var Client = function (options) {
   self._errorDomain = domain.createDomain();
 
   self._errorDomain.on('error', function (err) {
+    self._connecting = false;
+    self._connected = false;
+    self._pendingActions = [];
     self.emit('error', err);
   });
 
@@ -80,15 +83,12 @@ var Client = function (options) {
     self._timeout = 10000;
   }
 
-  var maxRetries = 6;
-  var retryCount = 0;
-  var retryInterval = 1000;
-
   self._subMap = new FlexiMap();
   self._commandMap = {};
   self._pendingActions = [];
 
   self._socket = new ComSocket();
+  self._connecting = false;
   self._connected = false;
 
   self._curID = 1;
@@ -144,21 +144,20 @@ var Client = function (options) {
   };
 
   self._connectHandler = function () {
-    retryCount = 0;
-    
+    self._connecting = false;
+    self._connected = true;
+
     if (secretKey) {
       var command = {
         action: 'init',
         secretKey: secretKey
       };
-      self._connected = true;
       self._exec(command, function (data) {
         self._resubscribeAll();
         self._execPending();
         self.emit('ready');
       });
     } else {
-      self._connected = true;
       self._resubscribeAll();
       self._execPending();
       self.emit('ready');
@@ -166,6 +165,7 @@ var Client = function (options) {
   };
 
   self._connect = function () {
+    self._connecting = true;
     if (self.socketPath) {
       self._socket.connect(self.socketPath, self._connectHandler);
     } else {
@@ -173,25 +173,14 @@ var Client = function (options) {
     }
   };
   
-  var isHandlingError = false;
-
-  var handleError = function () {
+  self._errorDomain.add(self._socket);
+  
+  self._socket.on('end', function () {
+    self._connecting = false;
     self._connected = false;
-    if (!isHandlingError) {
-      if (++retryCount <= maxRetries) {
-        isHandlingError = true;
-        setTimeout(function () {
-          isHandlingError = false;
-          self._connect();
-        }, retryInterval);
-      } else {
-        self.emit('error', new Error('Cannot connect to nData server - Maximum connection attempts exceeded'));
-      }
-    }
-  };
-
-  self._socket.on('error', handleError);
-
+    self._pendingActions = [];
+  });
+  
   self._socket.on('message', function (response) {
     var id = response.id;
     var error = response.error || null;
@@ -236,8 +225,11 @@ var Client = function (options) {
         }, self._timeout);
       }
       self._socket.write(command);
+    } else if (self._connecting) {
+      self._pendingActions.push(arguments);
     } else {
       self._pendingActions.push(arguments);
+      self._connect();
     }
   };
   
@@ -769,6 +761,7 @@ var Client = function (options) {
       var setDisconnectStatus = function () {
         self._socket.removeListener('end', setDisconnectStatus);
         self._connected = false;
+        self._connecting = false;
       };
       self._socket.on('end', setDisconnectStatus);
       self._socket.end();
