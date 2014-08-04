@@ -17,12 +17,13 @@ if (STORE_CONTROLLER_PATH) {
 
 var EventEmitter = require('events').EventEmitter;
 
-var initialized = {};
-
+var fs = require('fs');
 var domain = require('domain');
 var com = require('ncom');
 var ExpiryManager = require('expirymanager').ExpiryManager;
 var FlexiMap = require('fleximap').FlexiMap;
+
+var initialized = {};
 
 var errorHandler = function (err) {
   var error;
@@ -433,6 +434,9 @@ server.on('listening', function () {
 });
 
 if (SOCKET_PATH) {
+  if (process.platform != 'win32' && fs.existsSync(SOCKET_PATH)) {
+    fs.unlinkSync(SOCKET_PATH)
+  }
   server.listen(SOCKET_PATH);
 } else {
   server.listen(PORT);
