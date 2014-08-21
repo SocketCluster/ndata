@@ -106,75 +106,18 @@ var run = function (query, baseKey) {
   return Function('"use strict"; return (' + query + ')(arguments[0], arguments[1], arguments[2]);')(rebasedDataMap, dataExpirer, channelMap);
 };
 
-
 var Store = function () {
   EventEmitter.call(this);
+  
+  this.dataMap = dataMap;
+  this.dataExpirer = dataExpirer;
+  this.channelMap = channelMap;
 };
 
 Store.prototype = Object.create(EventEmitter.prototype);
 
-Store.prototype.set = function (key, value) {
-  return dataMap.set(key, value);
-};
-
-Store.prototype.expire = function (keys, value) {
-  dataExpirer.expire(keys, value);
-};
-
-Store.prototype.unexpire = function (keys) {
-  dataExpirer.unexpire(keys);
-};
-
-Store.prototype.getExpiry = function (key) {
-  return dataExpirer.getExpiry(key);
-};
-
-Store.prototype.get = function (key) {
-  return dataMap.get(key);
-};
-
-Store.prototype.getRange = function (key, fromIndex, toIndex) {
-  return dataMap.getRange(key, fromIndex, toIndex);
-};
-
-Store.prototype.getAll = function () {
-  return dataMap.getAll();
-};
-
-Store.prototype.count = function (key) {
-  return dataMap.count(key);
-};
-
-Store.prototype.add = function (key, value) {
-  return dataMap.add(key, value);
-};
-
-Store.prototype.concat = function (key, value) {
-  return dataMap.concat(key, value);
-};
-
 Store.prototype.run = function (query, baseKey) {
   return run(query, baseKey);
-};
-
-Store.prototype.remove = function (key) {
-  return dataMap.remove(key);
-};
-
-Store.prototype.removeRange = function (key, fromIndex, toIndex) {
-  return dataMap.removeRange(key, fromIndex, toIndex);
-};
-
-Store.prototype.removeAll = function () {
-  dataMap.removeAll();
-};
-
-Store.prototype.pop = function (key) {
-  return dataMap.pop(key);
-};
-
-Store.prototype.hasKey = function (key) {
-  return dataMap.hasKey(key);
 };
 
 Store.prototype.publish = function (channel, message) {
@@ -192,13 +135,13 @@ Store.prototype.publish = function (channel, message) {
 };
 
 var nDataStore = new Store();
+errorDomain.add(nDataStore);
 
 if (STORE_CONTROLLER) {
   errorDomain.run(function () {
     STORE_CONTROLLER.run(nDataStore);
   });
 }
-errorDomain.add(nDataStore);
 
 var actions = {
   init: function (command, socket) {
@@ -212,7 +155,7 @@ var actions = {
   },
 
   set: function (command, socket) {
-    var result = nDataStore.set(command.key, command.value);
+    var result = nDataStore.dataMap.set(command.key, command.value);
     var response = {id: command.id, type: 'response', action: 'set'};
     if (command.getValue) {
       response.value = result;
@@ -221,43 +164,43 @@ var actions = {
   },
 
   expire: function (command, socket) {
-    nDataStore.expire(command.keys, command.value);
+    nDataStore.dataExpirer.expire(command.keys, command.value);
     var response = {id: command.id, type: 'response', action: 'expire'};
     send(socket, response);
   },
 
   unexpire: function (command, socket) {
-    nDataStore.unexpire(command.keys);
+    nDataStore.dataExpirer.unexpire(command.keys);
     var response = {id: command.id, type: 'response', action: 'unexpire'};
     send(socket, response);
   },
 
   getExpiry: function (command, socket) {
-    var response = {id: command.id, type: 'response', action: 'getExpiry', value: nDataStore.getExpiry(command.key)};
+    var response = {id: command.id, type: 'response', action: 'getExpiry', value: nDataStore.dataExpirer.getExpiry(command.key)};
     send(socket, response);
   },
 
   get: function (command, socket) {
-    var result = nDataStore.get(command.key);
+    var result = nDataStore.dataMap.get(command.key);
     send(socket, {id: command.id, type: 'response', action: 'get', value: result});
   },
 
   getRange: function (command, socket) {
-    var result = nDataStore.getRange(command.key, command.fromIndex, command.toIndex);
+    var result = nDataStore.dataMap.getRange(command.key, command.fromIndex, command.toIndex);
     send(socket, {id: command.id, type: 'response', action: 'getRange', value: result});
   },
 
   getAll: function (command, socket) {
-    send(socket, {id: command.id, type: 'response', action: 'getAll', value: nDataStore.getAll()});
+    send(socket, {id: command.id, type: 'response', action: 'getAll', value: nDataStore.dataMap.getAll()});
   },
 
   count: function (command, socket) {
-    var result = nDataStore.count(command.key);
+    var result = nDataStore.dataMap.count(command.key);
     send(socket, {id: command.id, type: 'response', action: 'count', value: result});
   },
 
   add: function (command, socket) {
-    var result = nDataStore.add(command.key, command.value);
+    var result = nDataStore.dataMap.add(command.key, command.value);
     var response = {id: command.id, type: 'response', action: 'add'};
     if (command.getValue) {
       response.value = result;
@@ -266,7 +209,7 @@ var actions = {
   },
 
   concat: function (command, socket) {
-    var result = nDataStore.concat(command.key, command.value);
+    var result = nDataStore.dataMap.concat(command.key, command.value);
     var response = {id: command.id, type: 'response', action: 'concat'};
     if (command.getValue) {
       response.value = result;
@@ -302,7 +245,7 @@ var actions = {
   },
 
   remove: function (command, socket) {
-    var result = nDataStore.remove(command.key);
+    var result = nDataStore.dataMap.remove(command.key);
     if (!command.noAck) {
       var response = {id: command.id, type: 'response', action: 'remove'};
       if (command.getValue) {
@@ -313,7 +256,7 @@ var actions = {
   },
 
   removeRange: function (command, socket) {
-    var result = nDataStore.removeRange(command.key, command.fromIndex, command.toIndex);
+    var result = nDataStore.dataMap.removeRange(command.key, command.fromIndex, command.toIndex);
     if (!command.noAck) {
       var response = {id: command.id, type: 'response', action: 'removeRange'};
       if (command.getValue) {
@@ -324,14 +267,14 @@ var actions = {
   },
 
   removeAll: function (command, socket) {
-    nDataStore.removeAll();
+    nDataStore.dataMap.removeAll();
     if (!command.noAck) {
       send(socket, {id: command.id, type: 'response', action: 'removeAll'});
     }
   },
 
   pop: function (command, socket) {
-    var result = nDataStore.pop(command.key);
+    var result = nDataStore.dataMap.pop(command.key);
     if (!command.noAck) {
       var response = {id: command.id, type: 'response', action: 'pop'};
       if (command.getValue) {
@@ -342,7 +285,7 @@ var actions = {
   },
 
   hasKey: function (command, socket) {
-    send(socket, {id: command.id, type: 'response', action: 'hasKey', value: nDataStore.hasKey(command.key)});
+    send(socket, {id: command.id, type: 'response', action: 'hasKey', value: nDataStore.dataMap.hasKey(command.key)});
   },
   
   subscribe: function (command, socket) {
