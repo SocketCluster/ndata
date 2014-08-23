@@ -257,6 +257,8 @@ var Client = function (options) {
         });
       }
     } else {
+      self._subMap.set(channel, true);
+      
       var command = {
         channel: channel,
         action: 'subscribe'
@@ -264,10 +266,10 @@ var Client = function (options) {
       
       var callback = function (err) {
         if (err) {
+          self._subMap.remove(channel);
           ackCallback && ackCallback(err);
           self.emit('subscribefail');
         } else {
-          self._subMap.set(channel, true);
           ackCallback && ackCallback();
           self.emit('subscribe');
         }
@@ -280,6 +282,8 @@ var Client = function (options) {
     // No need to unsubscribe if the server is disconnected
     // The server cleans up automatically in case of disconnection
     if (self.isSubscribed(channel) && self._connected) {
+      self._subMap.remove(channel);
+      
       var command = {
         action: 'unsubscribe',
         channel: channel
@@ -287,10 +291,10 @@ var Client = function (options) {
 
       var cb = function (err) {
         if (err) {
+          self._subMap.set(channel, true);
           ackCallback && ackCallback(err);
           self.emit('unsubscribefail');
         } else {
-          self._subMap.remove(channel);
           ackCallback && ackCallback();
           self.emit('unsubscribe');
         }
