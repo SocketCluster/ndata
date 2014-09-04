@@ -88,7 +88,12 @@ var removeListener = function (socket, channel) {
 };
 
 var removeAllListeners = function (socket) {
-  channelMap.remove(['sockets', socket.id]);
+  var subMap = channelMap.remove(['sockets', socket.id]);
+  var channels = [];
+  for (var i in subMap) {
+    channels.push(i);
+  }
+  return channels;
 };
 
 var getListeners = function (socket) {
@@ -289,18 +294,27 @@ var actions = {
   },
   
   subscribe: function (command, socket) {
+    var hasListener = anyHasListener(command.channel);
     addListener(socket, command.channel);
-    nDataStore.emit('subscribe', command.channel);
+    if (!hasListener) {
+      nDataStore.emit('subscribe', command.channel);
+    }
     send(socket, {id: command.id, type: 'response', action: 'subscribe', channel: command.channel});
   },
 
   unsubscribe: function (command, socket) {
     if (command.channel) {
       removeListener(socket, command.channel);
+      var hasListener = anyHasListener(command.channel);
+      if (!hasListener) {
+        nDataStore.emit('unsubscribe', command.channel);
+      }
     } else {
-      removeAllListeners(socket);
+      var channels = removeAllListeners(socket);
+      for (var i in channels) {
+        nDataStore.emit('unsubscribe', channels[i]);
+      }
     }
-    nDataStore.emit('unsubscribe', command.channel);
     send(socket, {id: command.id, type: 'response', action: 'unsubscribe', channel: command.channel});
   },
 
@@ -368,7 +382,10 @@ var handleConnection = errorDomain.bind(function (sock) {
       }
       delete initialized[sock.id];
     }
-    removeAllListeners(sock);
+    var channels = removeAllListeners(sock);
+    for (var i in channels) {
+      nDataStore.emit('unsubscribe', channels[i]);
+    }
     errorDomain.remove(sock);
   });
 });
