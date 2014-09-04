@@ -312,7 +312,9 @@ var actions = {
     } else {
       var channels = removeAllListeners(socket);
       for (var i in channels) {
-        nDataStore.emit('unsubscribe', channels[i]);
+        if (!anyHasListener(channels[i])) {
+          nDataStore.emit('unsubscribe', channels[i]);
+        }
       }
     }
     send(socket, {id: command.id, type: 'response', action: 'unsubscribe', channel: command.channel});
@@ -384,7 +386,9 @@ var handleConnection = errorDomain.bind(function (sock) {
     }
     var channels = removeAllListeners(sock);
     for (var i in channels) {
-      nDataStore.emit('unsubscribe', channels[i]);
+      if (!anyHasListener(channels[i])) {
+        nDataStore.emit('unsubscribe', channels[i]);
+      }
     }
     errorDomain.remove(sock);
   });
