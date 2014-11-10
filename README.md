@@ -211,7 +211,7 @@ callback(err, value)
 getRange(keyChain, fromIndex,[ toIndex,] callback)
 ```
 This function assumes that the value at ```keyChain``` is an Array or Object.
-Capture all values starting at ```fromIndex``` and finishing at ```toIndex``
+Capture all values starting at ```fromIndex``` and finishing at ```toIndex```
 but **not including** ```toIndex```. If ```toIndex`` is not specified, all
 values from ```fromIndex``` until the end of the Array or Object will be
 included. The callback is in form:
