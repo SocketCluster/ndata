@@ -296,7 +296,7 @@ In this case, nData will *create* the necessary key chain and set the
 bottom-level 'key' to 'Hello World'.
 If you were to call:
 ```js
-dataClient.get(['this', 'is', a'], function(value) {
+dataClient.get(['this', 'is', 'a'], function(value) {
 console.log(value);
 });
 ```
