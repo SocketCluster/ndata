@@ -1,7 +1,7 @@
 nData
 ======
 
-nData is a lightweight key-value store server and client pair. It is written
+*nData* is a lightweight key-value store server and client pair. It is written
 entirely in node.js for maximum portability.
 
 ## Installation
@@ -18,9 +18,9 @@ To use it call:
 var ndata = require('ndata');
 ```
 
-Firstly, launch a new nData server. If you're using the node cluster module,
-you might want to launch the nData server once from the master process and
-then interact with it using nData clients.
+Firstly, launch a new *nData* server. If you're using the node cluster module,
+you might want to launch the *nData* server once from the master process and
+then interact with it using *nData* clients.
 
 ## Server
 
@@ -33,7 +33,7 @@ var dataServer = ndata.createServer({port: 9000, secretKey: 'mySecretKey'})
 The ```secretKey``` argument is optional; you should use it if you want to
 restrict access to the server. If you're running a node cluster, you may want
 to use a random key and distribute it to all the workers so that only your
-application can interact with the nData server.
+application can interact with the *nData* server.
 
 Once the server is setup, you should create clients to interact with it.
 
@@ -42,7 +42,7 @@ Once the server is setup, you should create clients to interact with it.
 
 ## Client
 
-To create a client use:
+To create a **client** use:
 
 ```js
 var dataClient = ndata.createClient({port: 9000, secretKey: 'mySecretKey'});
@@ -55,7 +55,7 @@ createServer function.
 
 The client exposes the following methods:
 (Please see the [section on keys ](https://github.com/TopCloud/ndata#keys) to
-see how you can use keys in nData. Also, note that the callback argument in
+see how you can use keys in *nData*. Also, note that the callback argument in
 all of the following cases is optional.)
 
 #### run
@@ -66,7 +66,7 @@ run(code,[data,] callback)
 Run a special JavaScript function
 declaration (code) as a query *on the nData server*. This function declaration
 accepts the DataMap as a parameter.
-This is the most important function in nData, all the other functions are
+This is the most important function in *nData*, all the other functions are
 basically utility functions to make things quicker. Using run() offers the
 most flexibility. The *callback* is in form:
 ```
@@ -93,7 +93,7 @@ client.run(queryFn, function(err, data) {
 **Note**
 
 The *query functions* are **not** regular functions. Query functions are
-executed remotely (on the nData server), therefore, you cannot access
+executed remotely (on the *nData* server), therefore, you cannot access
 variables from the outer parent scope while inside them.
 
 To pass data from the current process to use inside your query functions, you
@@ -147,7 +147,7 @@ object (```value```). The callback is in form:
 callback(err)
 ```
 
-### remove
+#### remove
 
 ```js
 remove(keyChain,[getValue,] callback)
@@ -160,7 +160,7 @@ is in form:
 callback(err, value)
 ```
 
-### removeRange
+#### removeRange
 
 ```js
 removeRange(keyChain, fromIndex,[ toIndex, getValue,] callback)
@@ -174,16 +174,16 @@ is in form:
 callback(err, value)
 ```
 
-### removeAll
+#### removeAll
 
 ```js
 removeAll(callback)
 ```
-Clear nData *completely*. The callback is in form:
+Clear *nData* *completely*. The callback is in form:
 ```js
 callback(err)
 ```
-### pop
+#### pop
 
 ```js
 pop(keyChain,[getValue,] callback)
@@ -224,12 +224,12 @@ callback(err, value)
 ```js
 getAll(callback)
 ```
-Get all the values in nData. The callback is in form:
+Get all the values in *nData*. The callback is in form:
 ```js
 callback(err, value)
 ```
 
-### count
+#### count
 
 ```js
 count(keyChain, callback)
@@ -239,12 +239,12 @@ Count the number of elements at ```keyChain```. The callback is in form:
 callback(err, value)
 ```
 
-### subscribe
+#### subscribe
 
 ```js
 subscribe(channel, ackCallback)
 ```
-Watch a ```channel``` on nData. This is the nData equivalent to
+Watch a ```channel``` on *nData*. This is the *nData* equivalent to
 [Redis' ```subscribe()```](http://redis.io/commands/subscribe). When an event
 happens on any watched channel, you can handle it using
 ```js
@@ -260,10 +260,11 @@ Unwatch the specified ```channel```. If ```channel``` is not specified, it
 will unsubscribe from all channels.
 
 #### on
+
 ```js
 on(event, listener)
 ```
-Listen to events on nData, you should listen to the 'message' event to handle
+Listen to events on *nData*, you should listen to the 'message' event to handle
 messages from subscribed channels.
 
 #### publish
@@ -275,7 +276,7 @@ Publish an event with the specified associated value.
 
 ## Keys
 
-nData is very flexible with how you can use keys. It lets you set key chains
+*nData* is very flexible with how you can use keys. It lets you set key chains
 of any dimension without having to manually create each link in the chain.
 
 A key chain is an array of keys - Each subsequent key in the chain is a child
@@ -288,16 +289,16 @@ The key chain ```['this', 'is', 'a', 'key']``` would reference the number
 ```123```. The key chain ```['this', 'is']``` would reference the object
 ```{'a': {'key': 123}}```, etc.
 
-When you start, nData will be empty, but this code is perfectly valid:
+When you start, *nData* will be empty, but this code is perfectly valid:
 ```js
 dataClient.set(['this', 'is', 'a', 'deep', 'key'], 'Hello world');
 ```
-In this case, nData will *create* the necessary key chain and set the
+In this case, *nData* will *create* the necessary key chain and set the
 bottom-level 'key' to 'Hello World'.
 If you were to call:
 ```js
-dataClient.get(['this', 'is', 'a'], function(value) {
-console.log(value);
+dataClient.get(['this', 'is', 'a'], function(err, val) {
+    console.log(val);
 });
 ```
 The above would output:
@@ -305,7 +306,7 @@ The above would output:
 {deep:{key:'Hello world'}}
 ```
 
-nData generally doesn't restrict you from doing anything you want. Following
+*nData* generally doesn't restrict you from doing anything you want. Following
 from the previous example, it is perfectly OK to call this:
 ```js
 dataClient.add(['this', 'is', 'a'], 'foo');
@@ -314,13 +315,13 @@ In this case, the key chain ```['this', 'is', 'a']``` would evaluate to:
 ```js
 {0:'foo', deep:{key:'Hello world'}}
 ```
-In this case, nData will add the value at the next numeric index in the
+In this case, *nData* will add the value at the next numeric index in the
 specified key path (which in this case is 0).
 
 You can access numerically-indexed values like this:
 ```js
-dataClient.get(['this', 'is', 'a', 0], function(value) {
-    console.log(value);
+dataClient.get(['this', 'is', 'a', 0], function(err, val) {
+    console.log(val);
 });
 ```
 The output here will be 'foo'.
