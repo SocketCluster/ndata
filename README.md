@@ -58,6 +58,7 @@ The client exposes the following methods:
 see how you can use keys in *nData*. Also, note that the callback argument in
 all of the following cases is optional.)
 
+
 #### run
 
 ```js
@@ -212,7 +213,7 @@ getRange(keyChain, fromIndex,[ toIndex,] callback)
 ```
 This function assumes that the value at ```keyChain``` is an Array or Object.
 Capture all values starting at ```fromIndex``` and finishing at ```toIndex```
-but **not including** ```toIndex```. If ```toIndex`` is not specified, all
+but **not including** ```toIndex```. If ```toIndex``` is not specified, all
 values from ```fromIndex``` until the end of the Array or Object will be
 included. The callback is in form:
 ```js
@@ -238,6 +239,11 @@ Count the number of elements at ```keyChain```. The callback is in form:
 ```js
 callback(err, value)
 ```
+## publish subscribe
+
+*nData* provides [publish and subscribe](http://redis.io/topics/pubsub)
+ functionality.
+
 
 #### subscribe
 
@@ -265,7 +271,24 @@ will unsubscribe from all channels.
 on(event, listener)
 ```
 Listen to events on *nData*, you should listen to the 'message' event to handle
-messages from subscribed channels.
+messages from subscribed channels. Events are:
+
+* ```'ready'```: Triggers when *nData* is initialized and connected. You often
+    don't need to wait for that event though. The *nData* client will buffer
+    actions until the *nData* server ready.
+* ```'exit'``` This event carries two arguments to it's listener: ```code```
+    and ```signal```. It gets triggered when the *nData* **server** process
+    dies.
+* ```'connect_failed'``` This happens if the *nData* **client** fails to
+    connect to the server after the maximum number of retries have been
+    attempted.
+* ```'message'``` Captures data published to a channel which the client is
+    subscribed to.
+* ```'subscribe'``` Triggers whenever a successful subscribe operations occurs.
+* ```'subscribefail'``` Triggers whenever a subscribtion fails.
+* ```'unsubscribe'``` Triggers on a successful unsubscribe operation.
+* ```'unsubscribefail'``` Triggers whenever a unsubscribtion fails.
+* ```'error'``` Triggers whenever a error occurs.
 
 #### publish
 
@@ -273,6 +296,51 @@ messages from subscribed channels.
 publish(channel, message, callback)
 ```
 Publish an event with the specified associated value.
+
+**Example:**
+
+After starting the server (*server.js*):
+
+```js
+var ndata = require('ndata')
+  , dss   = ndata.createServer({port: 9000})
+```
+
+a first client (*client1.js*) can subscribe to channel ```foo``` and listen
+to ```messages```:
+
+```js
+var ndata   = require('ndata')
+  , dc      = ndata.createClient({port: 9000})
+  , ch      = 'foo'
+  , onMsgFn = function(ch, data){
+      console.log('message on channel ' + ch );
+      console.log('data:');
+      console.log(data);
+    }
+dc.subscribe(ch, function(err){
+  if(!err){
+    console.log('client 1 subscribed channel ' + ch  );
+  }
+})
+dc.on('message', onMsgFn )
+```
+
+If a second client (*client2.js*) publishes a message, the first client will
+execute the ```onMsgFn``` function:
+
+```js
+var ndata  = require('ndata')
+   , dc    = ndata.createClient({port: 9000})
+   , data  = {a:'b'}
+   , ch    = 'foo';
+dc.publish(ch,data , function(err){
+  if(!err){
+    console.log('client 2 published data:');
+    console.log(data);
+  }
+})
+```
 
 ## Keys
 
