@@ -268,7 +268,7 @@ var Client = function (options) {
         if (err) {
           self._subMap.remove(channel);
           ackCallback && ackCallback(err);
-          self.emit('subscribefail', err, channel);
+          self.emit('subscribeFail', err, channel);
         } else {
           ackCallback && ackCallback();
           self.emit('subscribe', channel);
@@ -293,7 +293,7 @@ var Client = function (options) {
         if (err) {
           self._subMap.set(channel, true);
           ackCallback && ackCallback(err);
-          self.emit('unsubscribefail');
+          self.emit('unsubscribeFail');
         } else {
           ackCallback && ackCallback();
           self.emit('unsubscribe');
