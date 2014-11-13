@@ -311,6 +311,10 @@ var Client = function (options) {
     }
   };
   
+  self.subscriptions = function () {
+    return Object.keys(self._subMap.getAll() || {});
+  };
+  
   self.isSubscribed = function (channel) {
     return self._subMap.hasKey(channel);
   };
