@@ -268,10 +268,10 @@ var Client = function (options) {
         if (err) {
           self._subMap.remove(channel);
           ackCallback && ackCallback(err);
-          self.emit('subscribefail');
+          self.emit('subscribefail', err, channel);
         } else {
           ackCallback && ackCallback();
-          self.emit('subscribe');
+          self.emit('subscribe', channel);
         }
       };
       self._exec(command, callback);
