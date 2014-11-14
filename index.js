@@ -41,7 +41,7 @@ var Server = function (options) {
   });
 
   self.destroy = function () {
-    self._server.kill();
+    self._server.kill('SIGTERM');
   };
 };
 

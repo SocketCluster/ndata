@@ -9,6 +9,7 @@ var SECRET_KEY = args.secretKey;
 var EXPIRY_ACCURACY = args.expiryAccuracy || 1000;
 var STORE_CONTROLLER_PATH = args.storeControllerPath;
 var DOWNGRADE_TO_USER = args.downgradeToUser;
+var PROCESS_TERM_TIMEOUT = args.processTermTimeout || 10000;
 
 var STORE_CONTROLLER;
 if (STORE_CONTROLLER_PATH) {
@@ -399,6 +400,15 @@ server.on('connection', handleConnection);
 
 server.on('listening', function () {
   process.send({event: 'listening'});
+});
+
+process.on('SIGTERM', function () {
+  server.close(function () {
+    process.exit();
+  });
+  setTimeout(function () {
+    process.exit();
+  }, PROCESS_TERM_TIMEOUT);
 });
 
 if (SOCKET_PATH) {
