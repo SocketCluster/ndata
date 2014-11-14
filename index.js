@@ -268,10 +268,10 @@ var Client = function (options) {
         if (err) {
           self._subMap.remove(channel);
           ackCallback && ackCallback(err);
-          self.emit('subscribefail');
+          self.emit('subscribeFail', err, channel);
         } else {
           ackCallback && ackCallback();
-          self.emit('subscribe');
+          self.emit('subscribe', channel);
         }
       };
       self._exec(command, callback);
@@ -293,7 +293,7 @@ var Client = function (options) {
         if (err) {
           self._subMap.set(channel, true);
           ackCallback && ackCallback(err);
-          self.emit('unsubscribefail');
+          self.emit('unsubscribeFail');
         } else {
           ackCallback && ackCallback();
           self.emit('unsubscribe');
@@ -309,6 +309,10 @@ var Client = function (options) {
         });
       }
     }
+  };
+  
+  self.subscriptions = function () {
+    return Object.keys(self._subMap.getAll() || {});
   };
   
   self.isSubscribed = function (channel) {

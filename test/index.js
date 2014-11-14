@@ -160,6 +160,13 @@ clientA.set(['that', '8a788b9c-c50e-0b3f-bd47-ec0c63327bf1'], [1, 2, 3, 4, 5], f
   });
 });
 
+assert(JSON.stringify(clientA.subscriptions()) == JSON.stringify([]));
+
+clientA.subscribe('foo', function (err) {
+  assert(clientA.isSubscribed('foo') == true);
+  assert(JSON.stringify(clientA.subscriptions()) == JSON.stringify(['foo']));
+});
+
 clientA.set(['check', 'expire', 'key'], 'some data', function(err) {
   clientA.expire([['check', 'expire', 'key']], 5);
   setTimeout(function () {

@@ -254,7 +254,9 @@ Watch a ```channel``` on *nData*. This is the *nData* equivalent to
 [Redis' ```subscribe()```](http://redis.io/commands/subscribe). When an event
 happens on any watched channel, you can handle it using
 ```js
-nDataClient.on('event', handler)
+nDataClient.on('message', function (channel, data) {
+    // ...
+})
 ```
 
 #### unsubscribe
@@ -295,7 +297,7 @@ messages from subscribed channels. Events are:
 ```js
 publish(channel, message, callback)
 ```
-Publish an event with the specified associated value.
+Publish data to a channel - Can be any JSON-compatible JavaScript object.
 
 **Example:**
 
