@@ -160,6 +160,84 @@ clientA.set(['that', '8a788b9c-c50e-0b3f-bd47-ec0c63327bf1'], [1, 2, 3, 4, 5], f
   });
 });
 
+var itemsA = ['a', 'b', 'c', 'd', 'e'];
+
+clientA.set(['levelA1', 'levelA2'], itemsA, function(err) {
+  var spliceOptions = {
+    index: 2,
+    count: 2,
+    items: ['c2', 'd2']
+  };
+  clientA.splice(['levelA1', 'levelA2'], spliceOptions, function(err) {
+    clientA.get(['levelA1', 'levelA2'], function(err, value) {
+      var expected = ['a', 'b', 'c2', 'd2', 'e'];
+      assert(JSON.stringify(value) == JSON.stringify(expected));
+    });
+  });
+});
+
+var itemsB = ['a', 'b', 'c', 'd', 'e'];
+
+clientA.set(['levelB1', 'levelB2'], itemsB, function(err) {
+  var spliceOptions = {
+    index: 2
+  };
+  clientA.splice(['levelB1', 'levelB2'], spliceOptions, function(err) {
+    clientA.get(['levelB1', 'levelB2'], function(err, value) {
+      var expected = ['a', 'b'];
+      assert(JSON.stringify(value) == JSON.stringify(expected));
+    });
+  });
+});
+
+var itemsC = ['a', 'b', 'c', 'd', 'e'];
+
+clientA.set(['levelC1', 'levelC2'], itemsC, function(err) {
+  var spliceOptions = {
+    count: 3
+  };
+  clientA.splice(['levelC1', 'levelC2'], spliceOptions, function(err) {
+    clientA.get(['levelC1', 'levelC2'], function(err, value) {
+      var expected = ['d', 'e'];
+      assert(JSON.stringify(value) == JSON.stringify(expected));
+    });
+  });
+});
+
+var itemsD = ['c', 'd', 'e'];
+
+clientA.set(['levelD1', 'levelD2'], itemsD, function(err) {
+  var spliceOptions = {
+    items: ['a', 'b']
+  };
+  clientA.splice(['levelD1', 'levelD2'], spliceOptions, function(err) {
+    clientA.get(['levelD1', 'levelD2'], function(err, value) {
+      var expected = ['a', 'b', 'c', 'd', 'e'];
+      assert(JSON.stringify(value) == JSON.stringify(expected));
+    });
+  });
+});
+
+var itemsE = ['a', 'b'];
+
+clientA.set(['levelE1', 'levelE2'], itemsE, function(err) {
+  var spliceOptions = {
+    index: 2,
+    count: 0,
+    items: [{key1: 1, key2: {nestedKey1: 'hi'}}, 'c']
+  };
+  clientA.splice(['levelE1', 'levelE2'], spliceOptions, function(err) {
+    clientA.get(['levelE1', 'levelE2'], function(err, value) {
+      var expected = ['a', 'b', {key1: 1, key2: {nestedKey1: 'hi'}}, 'c'];
+      assert(JSON.stringify(value) == JSON.stringify(expected));
+    });
+    clientA.get(['levelE1', 'levelE2', 2, 'key2'], function(err, value) {
+      var expected = {nestedKey1: 'hi'};
+      assert(JSON.stringify(value) == JSON.stringify(expected));
+    });
+  });
+});
+
 assert(JSON.stringify(clientA.subscriptions()) == JSON.stringify([]));
 
 clientA.subscribe('foo', function (err) {
