@@ -188,7 +188,7 @@ callback(err)
 #### splice
 
 ```js
-splice(keyChain,[options,] callback)
+splice(keyChain,[ options,] callback)
 ```
 
 This operation is designed to work on Arrays (the keyChain argument should point to an Array).
