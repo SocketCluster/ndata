@@ -278,6 +278,28 @@ var actions = {
       send(socket, {id: command.id, type: 'response', action: 'removeAll'});
     }
   },
+  
+  splice: function (command, socket) {
+    var args = [command.key, command.index, command.count];
+    if (command.items) {
+      args = args.concat(command.items);
+    }
+    // Remove any consecutive undefined references from end of array
+    for (var i = args.length - 1; i >= 0; i--) {
+      if (args[i] !== undefined) {
+        break;
+      }
+      args.pop();
+    }
+    var result = nDataStore.dataMap.splice.apply(nDataStore.dataMap, args);
+    if (!command.noAck) {
+      var response = {id: command.id, type: 'response', action: 'splice'};
+      if (command.getValue) {
+        response.value = result;
+      }
+      send(socket, response);
+    }
+  },
 
   pop: function (command, socket) {
     var result = nDataStore.dataMap.pop(command.key);

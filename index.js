@@ -709,6 +709,52 @@ var Client = function (options) {
     };
     self._exec(command, callback);
   };
+  
+  /*
+    splice(key,[ options, callback])
+    The following options are supported:
+    - fromIndex
+    - count // Number of items to delete
+    - items // Must be an Array of items to insert as part of splice
+  */
+  self.splice = function () {
+    var key = arguments[0];
+    var index = arguments[1];
+    var options = {};
+    var callback;
+    
+    if (arguments[2] instanceof Function) {
+      options = arguments[1];
+      callback = arguments[2];
+    } else if (arguments[1] instanceof Function) {
+      callback = arguments[1];
+    } else if (arguments[1]) {
+      options = arguments[1];
+    }
+
+    var command = {
+      action: 'splice',
+      key: key
+    };
+
+    if (options.index != null) {
+      command.index = options.index;
+    }
+    if (options.count != null) {
+      command.count = options.count;
+    }
+    if (options.items != null) {
+      command.items = options.items;
+    }
+    if (options.getValue) {
+      command.getValue = 1;
+    }
+    if (options.noAck) {
+      command.noAck = 1;
+    }
+
+    self._exec(command, callback);
+  };
 
   /*
     pop(key,[ options, callback])
