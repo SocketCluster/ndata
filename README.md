@@ -184,6 +184,27 @@ Clear *nData* *completely*. The callback is in form:
 ```js
 callback(err)
 ```
+
+#### splice
+
+```js
+splice(keyChain,[options,] callback)
+```
+
+This operation is designed to work on Arrays (the keyChain argument should point to an Array).
+It is similar to JavaScript's Array.splice() function. It can be used to remove and insert elements
+within an Array.
+The options argument is an object which can have the following properties:
+- index // The index at which to start inserting/deleting
+- count // The number of items to delete starting from index
+- items // An Array of items to insert at index
+
+Callback form:
+
+```js
+callback(err, value)
+```
+
 #### pop
 
 ```js
