@@ -4,6 +4,7 @@ var PORT;
 if (args.port) {
   PORT = parseInt(args.port);
 }
+var ID = args.id;
 var SOCKET_PATH = args.socketPath;
 var SECRET_KEY = args.secretKey;
 var EXPIRY_ACCURACY = args.expiryAccuracy || 1000;
@@ -115,6 +116,8 @@ var run = function (query, baseKey) {
 var Store = function () {
   EventEmitter.call(this);
   
+  this.id = ID;
+  this.secretKey = SECRET_KEY;
   this.dataMap = dataMap;
   this.dataExpirer = dataExpirer;
   this.channelMap = channelMap;
