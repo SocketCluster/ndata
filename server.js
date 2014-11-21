@@ -11,6 +11,7 @@ var EXPIRY_ACCURACY = args.expiryAccuracy || 1000;
 var STORE_CONTROLLER_PATH = args.storeControllerPath;
 var DOWNGRADE_TO_USER = args.downgradeToUser;
 var PROCESS_TERM_TIMEOUT = args.processTermTimeout || 10000;
+var STORE_OPTIONS = args.storeOptions;
 
 var STORE_CONTROLLER;
 if (STORE_CONTROLLER_PATH) {
@@ -118,6 +119,8 @@ var Store = function () {
   
   this.id = ID;
   this.secretKey = SECRET_KEY;
+  this.options = STORE_OPTIONS;
+  
   this.dataMap = dataMap;
   this.dataExpirer = dataExpirer;
   this.channelMap = channelMap;
