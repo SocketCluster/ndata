@@ -360,10 +360,7 @@ var actions = {
     if (command.getValue) {
       response.value = command.value;
     }
-    nDataStore.emit('publish', {
-      channel: command.channel,
-      value: command.value
-    });
+    nDataStore.emit('publish', command.channel, command.value);
     send(socket, response);
   }
 };
