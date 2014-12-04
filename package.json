@@ -15,7 +15,11 @@
     "fleximap": ">= 0.9.3",
     "ncom": "0.9.x"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "underscore":">=1.4.4",
+    "mocha":">=1.20.1",
+    "istanbul":">=0.3.0"
+  },
   "keywords": [
     "ndata",
     "nombo",
@@ -30,6 +34,11 @@
   "main": "index",
   "engines": {
     "node": ">= 0.8.0"
-  },
-  "optionalDependencies": {}
+  },	
+  "scripts": {
+    "cover": "istanbul cover _mocha -- -R spec",
+    "mocha": "mocha",
+    "test": "npm run mocha && npm run cover"
+    },
+    "optionalDependencies": {}
 }
