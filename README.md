@@ -37,8 +37,28 @@ application can interact with the *nData* server.
 
 Once the server is setup, you should create clients to interact with it.
 
-**Make sure that the server is running before creating clients; listen for the
-'ready' event on the server.**
+**Make sure that the server is running before creating clients**
+
+This ca be done in the following way:
+
+```js
+var conf = {port: 9000}
+  , server = ndata.createServer(conf);
+
+server.on('ready', function () {
+
+ console.log('Server ready, create client');
+ var client = ndata.createClient(conf);
+ 
+ // do client stuff
+ 
+});
+```
+After all the server provides a destroy function:
+
+```js
+server.destroy()
+```
 
 ## Client
 
@@ -417,3 +437,5 @@ dataClient.get(['this', 'is', 'a', 0], function(err, val) {
 ```
 The output here will be 'foo'.
 You can also add entire JSON-compatible objects as value.
+
+
