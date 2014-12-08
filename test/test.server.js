@@ -1,19 +1,33 @@
 var _      = require("underscore")
   , ndata  = require('../index')
   , assert = require('assert')
+  , conf   = {port: 9001}
+  , server
 
 describe('ndata server is up and running', function(){
+
+  before("run server", function(done){
+    server = ndata.createServer(conf);
+    done()
+    });
+
+  after("shut down server", function(done){
+    server.destroy();
+    done();
+  });
+
   describe('ndata#createServer', function(){
-    it('should provide ndata.createServer', function(){
-      assert(_.isFunction(ndata.createServer), true)
+    it('should provide server.on', function(done){
+      assert(_.isFunction(server.on), true)
+      done();
     });
   });
 
-  var server = ndata.createServer({port: 9000});
-  
   describe('ndata#createServer', function(){
-    it('should provide server.on', function(){
-      assert(_.isFunction(server.on), true)
+    it('should provide server.destroy', function(done){
+      assert(_.isFunction(server.destroy), true)
+      done();
     });
   });
-})
+
+});
