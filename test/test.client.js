@@ -5,7 +5,7 @@ var _      = require("underscore")
   , server
   , client;
 
-describe('ndata client, server should already run from test.server', function () {
+describe('ndata client', function () {
 
   before("run the server before start", function (done) {
     server = ndata.createServer(conf);
@@ -439,7 +439,7 @@ describe('ndata client, server should already run from test.server', function ()
       });
     });
   });
-  //
+
   describe('client#subscriptions', function () {
     it('should have no subsscriptions (empty array)', function (done) {
       assert(JSON.stringify(client.subscriptions()) == JSON.stringify([]));
@@ -447,25 +447,23 @@ describe('ndata client, server should already run from test.server', function ()
     });
   });
 
+  var ch = "foo";
   describe('client#subscriptions', function () {
-    it('should subscribe channel foo', function (done) {
+    it('should subscribe channel ' + ch, function (done) {
 
-      client.subscribe('foo', function (err) {
-        assert(client.isSubscribed('foo') == true);
-        assert(JSON.stringify(client.subscriptions()) == JSON.stringify(['foo']));
+      client.subscribe(ch, function (err) {
+        assert(client.isSubscribed(ch) == true);
+        assert(JSON.stringify(client.subscriptions()) == JSON.stringify([ch]));
         done();
       });
     });
   });
-  
+
+  var etsec = 1;
   describe('client#expire', function () {
-  
-    // Note that for efficiency reasons, the expiry accuracy is 1000 milliseconds -
-    // Also the provided expiry should be an integer (in seconds).
-    
-    it('value should expire after certain time', function (done) {
+    it('value should be expired 1000ms after the given  time.', function (done) {
       client.set(['check', 'expire', 'key'], 'some data', function (err) {
-        client.expire([['check', 'expire', 'key']], 1);
+        client.expire([['check', 'expire', 'key']], etsec);
         setTimeout(function () {
           client.get(['check'], function (err, value) {
             var expected = {
@@ -474,9 +472,8 @@ describe('ndata client, server should already run from test.server', function ()
             assert(JSON.stringify(value) == JSON.stringify(expected));
             done();
           });
-        }, 1500);
+        }, etsec*1000 + 1000);
       });
     });
   });
-  
 });
