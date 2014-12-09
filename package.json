@@ -12,7 +12,8 @@
       "email": "flashthink@gmail.com"
     },
     {
-      "name": "wactbprot"
+      "name": "wactbprot",
+      "email": "wactbprot@gmail.com"
     }
   ],
   "dependencies": {
@@ -41,9 +42,8 @@
     "node": ">= 0.8.0"
   },
   "scripts": {
-    "cover": "istanbul cover _mocha -- -R spec",
-    "mocha": "mocha",
-    "test": "npm run mocha && npm run cover"
+    "cover": "istanbul cover _mocha -- --reporter spec --timeout 3000",
+    "mocha": "mocha --reporter spec --timeout 3000"
   },
   "optionalDependencies": {}
 }
