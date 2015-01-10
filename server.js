@@ -375,10 +375,14 @@ var genID = function () {
 };
 
 var server = com.createServer();
+var connections = {};
 
 var handleConnection = errorDomain.bind(function (sock) {
   errorDomain.add(sock);
   sock.id = genID();
+  
+  connections[sock.id] = sock;
+  
   sock.on('message', function (command) {
     if (!SECRET_KEY || initialized.hasOwnProperty(sock.id) || command.action == 'init') {
       try {
@@ -404,6 +408,8 @@ var handleConnection = errorDomain.bind(function (sock) {
   });
 
   sock.on('close', function () {
+    delete connections[sock.id];
+    
     if (initialized[sock.id]) {
       if (initialized[sock.id].deathQuery) {
         run(initialized[sock.id].deathQuery);
@@ -431,6 +437,11 @@ process.on('SIGTERM', function () {
   server.close(function () {
     process.exit();
   });
+  
+  for (var i in connections) {
+    connections[i].destroy();
+  }
+  
   setTimeout(function () {
     process.exit();
   }, PROCESS_TERM_TIMEOUT);
