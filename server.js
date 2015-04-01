@@ -133,14 +133,27 @@ Store.prototype.run = function (query, baseKey) {
 };
 
 Store.prototype.publish = function (channel, message) {
+  // TODO: Use random 128-bit base64 string instead
+  var mid = Math.random() * Math.pow(2, 32);
+  this.publishRaw(channel, message, mid);
+  return mid;
+};
+
+Store.prototype.publishRaw = function (channel, message, mid) {
   var sockets = channelMap.get('sockets');
   var sock, channelKey;
+  
+  var messageNotification = {type: 'message', channel: channel, value: message};
+  if (mid != null) {
+    messageNotification.mid = mid;
+  }
+  
   for (var i in sockets) {
     channelKey = ['sockets', i].concat(channel);
     if (channelMap.hasKey(channelKey)) {
       sock = channelMap.get(channelKey);
       if (sock instanceof com.ComSocket) {
-        send(sock, {type: 'message', channel: channel, value: message});
+        send(sock, messageNotification);
       }
     }
   }
@@ -355,12 +368,22 @@ var actions = {
   },
 
   publish: function (command, socket) {
-    nDataStore.publish(command.channel, command.value);
+    var mid = nDataStore.publish(command.channel, command.value);
     var response = {id: command.id, type: 'response', action: 'publish', channel: command.channel};
     if (command.getValue) {
       response.value = command.value;
     }
-    nDataStore.emit('publish', command.channel, command.value);
+    nDataStore.emit('publish', command.channel, command.value, command.mid);
+    send(socket, response);
+  },
+  
+  publishRaw: function (command, socket) {
+    nDataStore.publishRaw(command.channel, command.value, command.mid);
+    var response = {id: command.id, type: 'response', action: 'publishRaw', channel: command.channel, mid: command.mid};
+    if (command.getValue) {
+      response.value = command.value;
+    }
+    nDataStore.emit('publish', command.channel, command.value, command.mid);
     send(socket, response);
   }
 };

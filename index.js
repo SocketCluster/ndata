@@ -8,8 +8,9 @@ var DEFAULT_PORT = 9435;
 var HOST = '127.0.0.1';
 
 var Server = function (options) {
+  var self = this
+  
   EventEmitter.call(this);
-  var self = this;
   
   var stringArgs = JSON.stringify(options);
 
@@ -201,7 +202,7 @@ var Client = function (options) {
         }
       }
     } else if (response.type == 'message') {
-      self.emit('message', response.channel, response.value);
+      self.emit('message', response.channel, response.value, response.mid);
     }
   });
 
@@ -318,7 +319,22 @@ var Client = function (options) {
   self.isSubscribed = function (channel) {
     return self._subMap.hasKey(channel);
   };
+  
+  self.publishRaw = function (channel, value, mid, callback) {
+    var command = {
+      action: 'publishRaw',
+      channel: channel,
+      value: value
+    };
+    
+    if (mid != null) {
+      command.mid = mid;
+    }
 
+    self._exec(command, callback);
+  };
+
+  // publish(channel, [value, callback])
   self.publish = function () {
     var channel = arguments[0];
     var value = null;
