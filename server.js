@@ -25,6 +25,7 @@ var domain = require('domain');
 var com = require('ncom');
 var ExpiryManager = require('expirymanager').ExpiryManager;
 var FlexiMap = require('fleximap').FlexiMap;
+var uuid = require('node-uuid');
 
 var initialized = {};
 
@@ -133,8 +134,7 @@ Store.prototype.run = function (query, baseKey) {
 };
 
 Store.prototype.publish = function (channel, message) {
-  // TODO: Use random 128-bit base64 string instead
-  var mid = Math.random() * Math.pow(2, 32);
+  var mid = uuid.v4();
   this.publishRaw(channel, message, mid);
   return mid;
 };
@@ -373,7 +373,7 @@ var actions = {
     if (command.getValue) {
       response.value = command.value;
     }
-    nDataStore.emit('publish', command.channel, command.value, command.mid);
+    nDataStore.emit('publish', command.channel, command.value, mid);
     send(socket, response);
   },
   

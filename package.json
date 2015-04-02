@@ -18,7 +18,8 @@
   "dependencies": {
     "expirymanager": ">= 0.9.1",
     "fleximap": ">= 0.9.3",
-    "ncom": "0.9.x"
+    "ncom": "0.9.x",
+    "node-uuid": "1.4.3"
   },
   "devDependencies": {
     "underscore": "1.4.x",
