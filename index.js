@@ -533,7 +533,6 @@ var Client = function (options) {
 
   self._stringifyQuery = function (query, data) {
     query = query.toString();
-    query = query.replace(/[\t ]+/g, ' ').replace(/[\r\n]+ ?/g, ' ');
 
     var validVarNameRegex = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
     var headerString = '';
