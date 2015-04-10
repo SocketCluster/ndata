@@ -523,16 +523,19 @@ describe('ndata client', function () {
   });
 
   describe('client#pop', function () {
-    it('should remove the last numerically-indexed entry at keyChain (not working) ', function (done) {
+    it('should remove the last numerically-indexed entry at keyChain', function (done) {
       client.set(["a","b","c"], [1,2,3], function (err){
         client.get(["a","b","c"], function (err, value){
           assert.equal(value[2], 3);
           client.pop(["a","b","c"], true, function (err, value){
-            // I expect to receive 3 but get the entire array
-            // assert.equal(_.isArray(value), false);
+            assert.equal(_.isArray(value), true);
+            assert.equal(value.length, 1);
+            assert.equal(value[0], 3);
             client.get(["a","b","c"], function (err, value){
-              //entire array is gone
-              //  assert.equal(_.isUndefined(value), false);
+              assert.equal(_.isArray(value), true);
+              assert.equal(value.length, 2);
+              assert.equal(value[0], 1);
+              assert.equal(value[1], 2);
               done();
             });
           });
