@@ -202,7 +202,7 @@ var Client = function (options) {
         }
       }
     } else if (response.type == 'message') {
-      self.emit('message', response.channel, response.value, response.mid);
+      self.emit('message', response.channel, response.value, response.options || {});
     }
   });
 
@@ -320,36 +320,38 @@ var Client = function (options) {
     return self._subMap.hasKey(channel);
   };
   
-  self.publishRaw = function (channel, value, mid, callback) {
+  self.publishRaw = function (channel, value, options, callback) {
     var command = {
       action: 'publishRaw',
       channel: channel,
       value: value
     };
     
-    if (mid != null) {
-      command.mid = mid;
+    if (options != null) {
+      command.options = options;
     }
-
+    
     self._exec(command, callback);
   };
 
-  // publish(channel, [value, callback])
+  // publish(channel, [value, serviceLevel, callback])
   self.publish = function () {
     var channel = arguments[0];
-    var value = null;
-    var callback = null;
-    if (arguments[1] instanceof Function) {
-      callback = arguments[1];
-    } else {
-      value = arguments[1];
+    var value = arguments[1];
+    var serviceLevel, callback;
+    if (arguments[2] instanceof Function) {
+      serviceLevel = 0;
       callback = arguments[2];
+    } else {
+      serviceLevel = arguments[2] || 0;
+      callback = arguments[3];
     }
 
     var command = {
       action: 'publish',
       channel: channel,
-      value: value
+      value: value,
+      serviceLevel: serviceLevel
     };
 
     self._exec(command, callback);

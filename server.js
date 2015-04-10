@@ -125,6 +125,8 @@ var Store = function () {
   this.dataMap = dataMap;
   this.dataExpirer = dataExpirer;
   this.channelMap = channelMap;
+  
+  this._lastPublishedMessageId = null;
 };
 
 Store.prototype = Object.create(EventEmitter.prototype);
@@ -133,19 +135,27 @@ Store.prototype.run = function (query, baseKey) {
   return run(query, baseKey);
 };
 
-Store.prototype.publish = function (channel, message) {
-  var mid = uuid.v4();
-  this.publishRaw(channel, message, mid);
-  return mid;
+Store.prototype.publish = function (channel, message, serviceLevel) {
+  var options = {};
+  if (serviceLevel > 0) {
+    options.mid = uuid.v4();
+    
+    if (serviceLevel > 1) {
+      options.pid = this._lastPublishedMessageId;
+    }
+    this._lastPublishedMessageId = options.mid;
+  }
+  this.publishRaw(channel, message, options);
+  return options;
 };
 
-Store.prototype.publishRaw = function (channel, message, mid) {
+Store.prototype.publishRaw = function (channel, message, options) {
   var sockets = channelMap.get('sockets');
   var sock, channelKey;
   
   var messageNotification = {type: 'message', channel: channel, value: message};
-  if (mid != null) {
-    messageNotification.mid = mid;
+  if (options) {
+    messageNotification.options = options;
   }
   
   for (var i in sockets) {
@@ -368,22 +378,24 @@ var actions = {
   },
 
   publish: function (command, socket) {
-    var mid = nDataStore.publish(command.channel, command.value);
+    var options = nDataStore.publish(command.channel, command.value, command.serviceLevel);
+    
     var response = {id: command.id, type: 'response', action: 'publish', channel: command.channel};
     if (command.getValue) {
       response.value = command.value;
     }
-    nDataStore.emit('publish', command.channel, command.value, mid);
+    nDataStore.emit('publish', command.channel, command.value, options);
     send(socket, response);
   },
-  
+
   publishRaw: function (command, socket) {
-    nDataStore.publishRaw(command.channel, command.value, command.mid);
-    var response = {id: command.id, type: 'response', action: 'publishRaw', channel: command.channel, mid: command.mid};
+    var options = command.options || {};
+    nDataStore.publishRaw(command.channel, command.value, options);
+    var response = {id: command.id, type: 'response', action: 'publishRaw', channel: command.channel};
     if (command.getValue) {
       response.value = command.value;
     }
-    nDataStore.emit('publish', command.channel, command.value, command.mid);
+    nDataStore.emit('publish', command.channel, command.value, options);
     send(socket, response);
   }
 };
