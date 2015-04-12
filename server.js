@@ -125,8 +125,6 @@ var Store = function () {
   this.dataMap = dataMap;
   this.dataExpirer = dataExpirer;
   this.channelMap = channelMap;
-  
-  this._lastPublishedMessageId = null;
 };
 
 Store.prototype = Object.create(EventEmitter.prototype);
@@ -139,11 +137,6 @@ Store.prototype.publish = function (channel, message, serviceLevel) {
   var options = {};
   if (serviceLevel > 0) {
     options.mid = uuid.v4();
-    
-    if (serviceLevel > 1) {
-      options.pid = this._lastPublishedMessageId;
-    }
-    this._lastPublishedMessageId = options.mid;
   }
   this.publishRaw(channel, message, options);
   return options;
