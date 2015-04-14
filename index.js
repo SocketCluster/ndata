@@ -334,25 +334,27 @@ var Client = function (options) {
     self._exec(command, callback);
   };
 
-  // publish(channel, [value, serviceLevel, callback])
+  // publish(channel, [value, guaranteeDelivery, callback])
   self.publish = function () {
     var channel = arguments[0];
     var value = arguments[1];
-    var serviceLevel, callback;
+    var guaranteeDelivery, callback;
     if (arguments[2] instanceof Function) {
-      serviceLevel = 0;
+      guaranteeDelivery = false;
       callback = arguments[2];
     } else {
-      serviceLevel = arguments[2] || 0;
+      guaranteeDelivery = arguments[2];
       callback = arguments[3];
     }
 
     var command = {
       action: 'publish',
       channel: channel,
-      value: value,
-      serviceLevel: serviceLevel
+      value: value
     };
+    if (guaranteeDelivery) {
+      command.guaranteeDelivery = guaranteeDelivery;
+    }
 
     self._exec(command, callback);
   };

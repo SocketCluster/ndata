@@ -133,9 +133,9 @@ Store.prototype.run = function (query, baseKey) {
   return run(query, baseKey);
 };
 
-Store.prototype.publish = function (channel, message, serviceLevel) {
+Store.prototype.publish = function (channel, message, guaranteeDelivery) {
   var options = {};
-  if (serviceLevel > 0) {
+  if (guaranteeDelivery) {
     options.mid = uuid.v4();
   }
   this.publishRaw(channel, message, options);
@@ -371,7 +371,7 @@ var actions = {
   },
 
   publish: function (command, socket) {
-    var options = nDataStore.publish(command.channel, command.value, command.serviceLevel);
+    var options = nDataStore.publish(command.channel, command.value, command.guaranteeDelivery);
     
     var response = {id: command.id, type: 'response', action: 'publish', channel: command.channel};
     if (command.getValue) {
