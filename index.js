@@ -319,17 +319,7 @@ var Client = function (options) {
     return self._subMap.hasKey(channel);
   };
 
-  self.publish = function () {
-    var channel = arguments[0];
-    var value = null;
-    var callback = null;
-    if (arguments[1] instanceof Function) {
-      callback = arguments[1];
-    } else {
-      value = arguments[1];
-      callback = arguments[2];
-    }
-
+  self.publish = function (channel, value, callback) {
     var command = {
       action: 'publish',
       channel: channel,
@@ -517,7 +507,6 @@ var Client = function (options) {
 
   self._stringifyQuery = function (query, data) {
     query = query.toString();
-    query = query.replace(/[\t ]+/g, ' ').replace(/[\r\n]+ ?/g, ' ');
 
     var validVarNameRegex = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
     var headerString = '';
