@@ -5,6 +5,7 @@ if (args.port) {
   PORT = parseInt(args.port);
 }
 var ID = args.id;
+var INSTANCE_ID = args.instanceId;
 var SOCKET_PATH = args.socketPath;
 var SECRET_KEY = args.secretKey;
 var EXPIRY_ACCURACY = args.expiryAccuracy || 1000;
@@ -118,6 +119,7 @@ var Store = function () {
   EventEmitter.call(this);
   
   this.id = ID;
+  this.instanceId = INSTANCE_ID;
   this.secretKey = SECRET_KEY;
   this.options = STORE_OPTIONS;
   
