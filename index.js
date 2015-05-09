@@ -13,12 +13,20 @@ var Server = function (options) {
   
   var stringArgs = JSON.stringify(options);
 
-  self.socketPath = options.socketPath
+  self.socketPath = options.socketPath;
   if (!self.socketPath) {
     self.port = options.port;
   }
   
-  self._server = fork(__dirname + '/server.js', [stringArgs]);
+  var execOptions = {
+    execArgv: []
+  };
+  
+  if (options.debug) {
+    execOptions.execArgv.push('--debug=' + options.debug);
+  }
+
+  self._server = fork(__dirname + '/server.js', [stringArgs], execOptions);
 
   self._server.on('message', function (value) {
     if (value.event == 'listening') {

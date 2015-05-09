@@ -150,6 +150,7 @@ Store.prototype.publish = function (channel, message) {
 
 var nDataStore = new Store();
 errorDomain.add(nDataStore);
+global.store = nDataStore;
 
 if (STORE_CONTROLLER) {
   errorDomain.run(function () {
