@@ -74,7 +74,7 @@ createServer function.
 ### Client methods
 
 The client exposes the following methods:
-(Please see the [section on keys ](https://github.com/TopCloud/ndata#keys) to
+(Please see the [section on keys ](https://github.com/SocketCluster/ndata#keys) to
 see how you can use keys in *nData*. Also, note that the callback argument in
 all of the following cases is optional.)
 

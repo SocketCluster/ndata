@@ -34,7 +34,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/topcloud/ndata.git"
+    "url": "git://github.com/SocketCluster/ndata.git"
   },
   "main": "index",
   "engines": {
