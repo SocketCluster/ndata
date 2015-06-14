@@ -447,7 +447,7 @@ describe('ndata client', function () {
             assert(JSON.stringify(value) == JSON.stringify(expected));
             done();
           });
-        }, etsec*1000 + 1000);
+        }, etsec * 1000 + 800);
       });
     });
   });
