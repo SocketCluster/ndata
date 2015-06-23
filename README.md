@@ -124,13 +124,6 @@ variables inside the query function when it gets executed on the server.
 All query data is escaped automatically, so it's safe to supply user
 input. The ```queryFn.data``` property is optional.
 
-#### input
-
-```js
-input(value)
-```
-Escapes user input to make it safe for use within the following functions. The
-```value``` parameter can be any JSON-compatible object.
 
 #### set
 
