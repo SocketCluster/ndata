@@ -408,14 +408,10 @@ var Client = function (options) {
   self.add = function () {
     var key = arguments[0];
     var value = arguments[1];
-    var options = {
-      getValue: 0
-    };
     var callback;
     if (arguments[2] instanceof Function) {
       callback = arguments[2];
     } else {
-      options.getValue = arguments[2];
       callback = arguments[3];
     }
 
@@ -424,10 +420,6 @@ var Client = function (options) {
       key: key,
       value: value
     };
-
-    if (options.getValue) {
-      command.getValue = 1;
-    }
 
     self._exec(command, callback);
   };

@@ -216,10 +216,7 @@ var actions = {
 
   add: function (command, socket) {
     var result = nDataStore.dataMap.add(command.key, command.value);
-    var response = {id: command.id, type: 'response', action: 'add'};
-    if (command.getValue) {
-      response.value = result;
-    }
+    var response = {id: command.id, type: 'response', action: 'add', value: result};
     send(socket, response);
   },
 

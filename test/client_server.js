@@ -74,7 +74,8 @@ describe('ndata client', function () {
       + 'existing should be kept'
       , function (done) {
           client.set(path2, val1, true, function (err, value) {
-            client.add(path2, val2, function (err, value) {
+            client.add(path2, val2, function (err, insertionIndex) {
+              assert.equal(insertionIndex , 1);
               client.get(path2, function (err, value) {
                 assert.equal(value[0] , val1);
                 assert.equal(value[1] , val2);

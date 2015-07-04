@@ -147,7 +147,7 @@ is not an array, this existing value will be placed inside an empty array and
 the specified value argument will be appended to that array. The callback is
 in form:
 ```js
-callback(err)
+callback(err, insertionIndex)
 ```
 
 #### concat
@@ -431,4 +431,18 @@ dataClient.get(['this', 'is', 'a', 0], function(err, val) {
 The output here will be 'foo'.
 You can also add entire JSON-compatible objects as value.
 
+
+## Tests
+
+To run tests, go to the ndata module directory then run:
+
+```bash
+npm test
+```
+
+If you get an error, make sure that you have mocha installed:
+
+```bash
+npm install mocha
+```
 
