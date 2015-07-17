@@ -1,8 +1,8 @@
 nData
 ======
 
-*nData* is a lightweight key-value store server and client pair. It is written
-entirely in node.js for maximum portability.
+*nData* is a lightweight key-value store and message broker.
+It is written entirely in node.js for maximum portability.
 
 ## Installation
 
