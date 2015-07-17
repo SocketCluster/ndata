@@ -1,7 +1,7 @@
 {
   "name": "ndata",
-  "description": "nData key-value store",
-  "version": "2.8.5",
+  "description": "nData key-value and message broker",
+  "version": "2.9.0",
   "author": {
     "name": "JF Gros-Dubois",
     "email": "flashthink@gmail.com"
@@ -27,8 +27,9 @@
   },
   "keywords": [
     "ndata",
-    "nombo",
-    "key value store",
+    "store",
+    "broker",
+    "message broker",
     "key value server",
     "session"
   ],
