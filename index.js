@@ -40,7 +40,10 @@ var Server = function (options) {
       } else {
         err = value.data;
       }
+      err.brokerPid = self._server.pid;
       self.emit('error', err);
+    } else if (value.event == 'brokerMessage') {
+      self.emit('brokerMessage', value.brokerId, value.data);
     }
   });
 
@@ -54,6 +57,13 @@ var Server = function (options) {
 };
 
 Server.prototype = Object.create(EventEmitter.prototype);
+
+Server.prototype.sendMasterMessage = function (data) {
+  this._server.send({
+    type: 'masterMessage',
+    data: data
+  });
+};
 
 module.exports.createServer = function (options) {
   if (!options) {

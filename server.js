@@ -130,6 +130,14 @@ var Broker = function () {
 
 Broker.prototype = Object.create(EventEmitter.prototype);
 
+Broker.prototype.sendToMaster = function (data) {
+  process.send({
+    event: 'brokerMessage',
+    brokerId: this.id,
+    data: data
+  });
+};
+
 Broker.prototype.run = function (query, baseKey) {
   return run(query, baseKey);
 };
@@ -431,6 +439,12 @@ server.on('connection', handleConnection);
 
 server.on('listening', function () {
   process.send({event: 'listening'});
+});
+
+process.on('message', function (m) {
+  if (m && m.type == 'masterMessage') {
+    nDataBroker.emit('masterMessage', m.data);
+  }
 });
 
 process.on('SIGTERM', function () {
