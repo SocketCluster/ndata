@@ -1,7 +1,7 @@
 {
   "name": "ndata",
   "description": "nData key-value and message broker",
-  "version": "2.9.0",
+  "version": "2.9.1",
   "author": {
     "name": "JF Gros-Dubois",
     "email": "flashthink@gmail.com"
