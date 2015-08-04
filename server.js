@@ -80,8 +80,10 @@ var hasListener = function (socket, channel) {
 var anyHasListener = function (channel) {
   var sockets = channelMap.get('sockets');
   for (var i in sockets) {
-    if (channelMap.hasKey(['sockets', i].concat(channel))) {
-      return true;
+    if (sockets.hasOwnProperty(i)) {
+      if (channelMap.hasKey(['sockets', i].concat(channel))) {
+        return true;
+      }
     }
   }
   return false;
@@ -95,7 +97,9 @@ var removeAllListeners = function (socket) {
   var subMap = channelMap.remove(['sockets', socket.id]);
   var channels = [];
   for (var i in subMap) {
-    channels.push(i);
+    if (subMap.hasOwnProperty(i)) {
+      channels.push(i);
+    }
   }
   return channels;
 };
@@ -146,11 +150,13 @@ Broker.prototype.publish = function (channel, message) {
   var sockets = channelMap.get('sockets');
   var sock, channelKey;
   for (var i in sockets) {
-    channelKey = ['sockets', i].concat(channel);
-    if (channelMap.hasKey(channelKey)) {
-      sock = channelMap.get(channelKey);
-      if (sock instanceof com.ComSocket) {
-        send(sock, {type: 'message', channel: channel, value: message});
+    if (sockets.hasOwnProperty(i)) {
+      channelKey = ['sockets', i].concat(channel);
+      if (channelMap.hasKey(channelKey)) {
+        sock = channelMap.get(channelKey);
+        if (sock instanceof com.ComSocket) {
+          send(sock, {type: 'message', channel: channel, value: message});
+        }
       }
     }
   }
@@ -349,8 +355,10 @@ var actions = {
     } else {
       var channels = removeAllListeners(socket);
       for (var i in channels) {
-        if (!anyHasListener(channels[i])) {
-          nDataBroker.emit('unsubscribe', channels[i]);
+        if (channels.hasOwnProperty(i)) {
+          if (!anyHasListener(channels[i])) {
+            nDataBroker.emit('unsubscribe', channels[i]);
+          }
         }
       }
     }
@@ -426,8 +434,10 @@ var handleConnection = errorDomain.bind(function (sock) {
     }
     var channels = removeAllListeners(sock);
     for (var i in channels) {
-      if (!anyHasListener(channels[i])) {
-        nDataBroker.emit('unsubscribe', channels[i]);
+      if (channels.hasOwnProperty(i)) {
+        if (!anyHasListener(channels[i])) {
+          nDataBroker.emit('unsubscribe', channels[i]);
+        }
       }
     }
     errorDomain.remove(sock);
@@ -453,7 +463,9 @@ process.on('SIGTERM', function () {
   });
   
   for (var i in connections) {
-    connections[i].destroy();
+    if (connections.hasOwnProperty(i)) {
+      connections[i].destroy();
+    }
   }
   
   setTimeout(function () {
@@ -472,7 +484,8 @@ if (SOCKET_PATH) {
 
 setInterval(function () {
   var keys = dataExpirer.extractExpiredKeys();
-  for (var i in keys) {
+  var len = keys.length;
+  for (var i = 0; i < len; i++) {
     dataMap.remove(keys[i]);
   }
 }, EXPIRY_ACCURACY);

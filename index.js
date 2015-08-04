@@ -120,7 +120,8 @@ var Client = function (options) {
   };
 
   self._execPending = function () {
-    for (var i in self._pendingActions) {
+    var len = self._pendingActions.length;
+    for (var i = 0; i < len; i++) {
       self._exec.apply(self, self._pendingActions[i]);
     }
     self._pendingActions = [];
@@ -131,11 +132,14 @@ var Client = function (options) {
       return [[]];
     } else {
       var channels = [];
-      var subChannels;
+      var subChannels, len;
       for (var key in channelMap) {
-        subChannels = self._getAllChannels(channelMap[key]);
-        for (var i in subChannels) {
-          channels.push([key].concat(subChannels[i]));
+        if (channelMap.hasOwnProperty(key)) {
+          subChannels = self._getAllChannels(channelMap[key]);
+          len = subChannels.length;
+          for (var i = 0; i < len; i++) {
+            channels.push([key].concat(subChannels[i]));
+          }
         }
       }
       return channels;
@@ -156,7 +160,8 @@ var Client = function (options) {
     };
     var channelMap = self._subMap.getAll();
     var channels = self._getAllChannels(channelMap);
-    for (var i in channels) {
+    var len = channels.length;
+    for (var i = 0; i < len; i++) {
       self.subscribe(channels[i], handleResubscribe.bind(self, channels[i]), true);
     }
   };
@@ -262,7 +267,9 @@ var Client = function (options) {
   self.extractValues = function (object) {
     var array = [];
     for (var i in object) {
-      array.push(object[i]);
+      if (object.hasOwnProperty(i)) {
+        array.push(object[i]);
+      }
     }
     return array;
   };
@@ -522,10 +529,12 @@ var Client = function (options) {
     var headerString = '';
 
     for (var i in data) {
-      if (!validVarNameRegex.test(i)) {
-        throw new Error("The variable name '" + i + "' is invalid");
+      if (data.hasOwnProperty(i)) {
+        if (!validVarNameRegex.test(i)) {
+          throw new Error("The variable name '" + i + "' is invalid");
+        }
+        headerString += 'var ' + i + '=' + JSON.stringify(data[i]) + ';';
       }
-      headerString += 'var ' + i + '=' + JSON.stringify(data[i]) + ';';
     }
 
     query = query.replace(/^(function *[(][^)]*[)] *{)/, '$1' + headerString);
