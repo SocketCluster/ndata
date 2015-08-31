@@ -22,7 +22,7 @@ var Server = function (options) {
   // because they have their own --debug-brokers option.
   var execOptions = {
     execArgv: process.execArgv.filter(function (arg) {
-      return arg != '--debug'
+      return arg != '--debug' && arg != '--debug-brk'
     })
   };
   
