@@ -18,8 +18,12 @@ var Server = function (options) {
     self.port = options.port;
   }
   
+  // Brokers should not inherit the master --debug argument
+  // because they have their own --debug-brokers option.
   var execOptions = {
-    execArgv: []
+    execArgv: process.execArgv.filter(function (arg) {
+      return arg != '--debug'
+    })
   };
   
   if (options.debug) {
