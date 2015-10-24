@@ -10,9 +10,15 @@ var SOCKET_PATH = args.socketPath;
 var SECRET_KEY = args.secretKey;
 var EXPIRY_ACCURACY = args.expiryAccuracy || 1000;
 var BROKER_CONTROLLER_PATH = args.brokerControllerPath;
+var INIT_CONTROLLER_PATH = args.initControllerPath || null;
 var DOWNGRADE_TO_USER = args.downgradeToUser;
 var PROCESS_TERM_TIMEOUT = args.processTermTimeout || 10000;
 var BROKER_OPTIONS = args.brokerOptions;
+
+var INIT_CONTROLLER;
+if(INIT_CONTROLLER_PATH != null) {
+    INIT_CONTROLLER = require(INIT_CONTROLLER_PATH);
+}
 
 var BROKER_CONTROLLER;
 if (BROKER_CONTROLLER_PATH) {
@@ -121,12 +127,12 @@ var run = function (query, baseKey) {
 
 var Broker = function () {
   EventEmitter.call(this);
-  
+
   this.id = ID;
   this.instanceId = INSTANCE_ID;
   this.secretKey = SECRET_KEY;
   this.options = BROKER_OPTIONS;
-  
+
   this.dataMap = dataMap;
   this.dataExpirer = dataExpirer;
   this.channelMap = channelMap;
@@ -165,6 +171,12 @@ Broker.prototype.publish = function (channel, message) {
 var nDataBroker = new Broker();
 errorDomain.add(nDataBroker);
 global.broker = nDataBroker;
+
+if (INIT_CONTROLLER) {
+  errorDomain.run(function () {
+    INIT_CONTROLLER.run(nDataBroker);
+  });
+}
 
 if (BROKER_CONTROLLER) {
   errorDomain.run(function () {
@@ -298,7 +310,7 @@ var actions = {
       send(socket, {id: command.id, type: 'response', action: 'removeAll'});
     }
   },
-  
+
   splice: function (command, socket) {
     var args = [command.key, command.index, command.count];
     if (command.items) {
@@ -335,7 +347,7 @@ var actions = {
   hasKey: function (command, socket) {
     send(socket, {id: command.id, type: 'response', action: 'hasKey', value: nDataBroker.dataMap.hasKey(command.key)});
   },
-  
+
   subscribe: function (command, socket) {
     var hasListener = anyHasListener(command.channel);
     addListener(socket, command.channel);
@@ -396,9 +408,9 @@ var connections = {};
 var handleConnection = errorDomain.bind(function (sock) {
   errorDomain.add(sock);
   sock.id = genID();
-  
+
   connections[sock.id] = sock;
-  
+
   sock.on('message', function (command) {
     if (!SECRET_KEY || initialized.hasOwnProperty(sock.id) || command.action == 'init') {
       try {
@@ -425,7 +437,7 @@ var handleConnection = errorDomain.bind(function (sock) {
 
   sock.on('close', function () {
     delete connections[sock.id];
-    
+
     if (initialized[sock.id]) {
       if (initialized[sock.id].deathQuery) {
         run(initialized[sock.id].deathQuery);
@@ -461,13 +473,13 @@ process.on('SIGTERM', function () {
   server.close(function () {
     process.exit();
   });
-  
+
   for (var i in connections) {
     if (connections.hasOwnProperty(i)) {
       connections[i].destroy();
     }
   }
-  
+
   setTimeout(function () {
     process.exit();
   }, PROCESS_TERM_TIMEOUT);
