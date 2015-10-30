@@ -16,7 +16,7 @@ var PROCESS_TERM_TIMEOUT = args.processTermTimeout || 10000;
 var BROKER_OPTIONS = args.brokerOptions;
 
 var INIT_CONTROLLER;
-if(INIT_CONTROLLER_PATH != null) {
+if (INIT_CONTROLLER_PATH != null) {
     INIT_CONTROLLER = require(INIT_CONTROLLER_PATH);
 }
 
