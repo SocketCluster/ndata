@@ -131,6 +131,7 @@ var Broker = function () {
   this.id = ID;
   this.instanceId = INSTANCE_ID;
   this.secretKey = SECRET_KEY;
+  this.type = 'broker';
   this.options = BROKER_OPTIONS;
 
   this.dataMap = dataMap;
