@@ -10,14 +10,14 @@ var HOST = '127.0.0.1';
 var Server = function (options) {
   EventEmitter.call(this);
   var self = this;
-  
+
   var stringArgs = JSON.stringify(options);
 
   self.socketPath = options.socketPath;
   if (!self.socketPath) {
     self.port = options.port;
   }
-  
+
   // Brokers should not inherit the master --debug argument
   // because they have their own --debug-brokers option.
   var execOptions = {
@@ -25,7 +25,7 @@ var Server = function (options) {
       return arg != '--debug' && arg != '--debug-brk'
     })
   };
-  
+
   if (options.debug) {
     execOptions.execArgv.push('--debug=' + options.debug);
   }
@@ -81,14 +81,14 @@ module.exports.createServer = function (options) {
 
 var Client = function (options) {
   var self = this;
-  
+
   var secretKey = options.secretKey;
   var timeout = options.timeout;
-  
+
   self.socketPath = options.socketPath;
   self.port = options.port;
   self.host = options.host;
-  
+
   self._errorDomain = domain.createDomain();
 
   self._errorDomain.on('error', function (err) {
@@ -130,7 +130,7 @@ var Client = function (options) {
     }
     self._pendingActions = [];
   };
-  
+
   self._getAllChannels = function (channelMap) {
     if (channelMap === true) {
       return [[]];
@@ -149,7 +149,7 @@ var Client = function (options) {
       return channels;
     }
   };
-  
+
   // Recovers subscriptions after nData server crash
   self._resubscribeAll = function () {
     var hasFailed = false;
@@ -199,15 +199,15 @@ var Client = function (options) {
       self._socket.connect(self.port, self.host, self._connectHandler);
     }
   };
-  
+
   self._errorDomain.add(self._socket);
-  
+
   self._socket.on('end', function () {
     self._connecting = false;
     self._connected = false;
     self._pendingActions = [];
   });
-  
+
   self._socket.on('message', function (response) {
     var id = response.id;
     var error = response.error || null;
@@ -259,7 +259,7 @@ var Client = function (options) {
       self._connect();
     }
   };
-  
+
   self.isConnected = function() {
     return self._connected;
   };
@@ -287,12 +287,12 @@ var Client = function (options) {
       }
     } else {
       self._subMap.set(channel, true);
-      
+
       var command = {
         channel: channel,
         action: 'subscribe'
       };
-      
+
       var callback = function (err) {
         if (err) {
           self._subMap.remove(channel);
@@ -312,7 +312,7 @@ var Client = function (options) {
     // The server cleans up automatically in case of disconnection
     if (self.isSubscribed(channel) && self._connected) {
       self._subMap.remove(channel);
-      
+
       var command = {
         action: 'unsubscribe',
         channel: channel
@@ -339,11 +339,11 @@ var Client = function (options) {
       }
     }
   };
-  
+
   self.subscriptions = function () {
     return Object.keys(self._subMap.getAll() || {});
   };
-  
+
   self.isSubscribed = function (channel) {
     return self._subMap.hasKey(channel);
   };
@@ -541,7 +541,9 @@ var Client = function (options) {
       }
     }
 
-    query = query.replace(/^(function *[(][^)]*[)] *{)/, '$1' + headerString);
+    query = query.replace(/^(function *[(][^)]*[)] *{)/, function (match) {
+      return match + headerString;
+    });
 
     return query;
   };
@@ -721,7 +723,7 @@ var Client = function (options) {
     };
     self._exec(command, callback);
   };
-  
+
   /*
     splice(key,[ options, callback])
     The following options are supported:
@@ -734,7 +736,7 @@ var Client = function (options) {
     var index = arguments[1];
     var options = {};
     var callback;
-    
+
     if (arguments[2] instanceof Function) {
       options = arguments[1];
       callback = arguments[2];
