@@ -358,6 +358,15 @@ var Client = function (options) {
     self._exec(command, callback);
   };
 
+  self.send = function (data, callback) {
+    var command = {
+      action: 'send',
+      value: data
+    };
+
+    self._exec(command, callback);
+  };
+
   /*
     set(key, value,[ options, callback])
   */

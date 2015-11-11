@@ -391,6 +391,21 @@ var actions = {
     }
     nDataBroker.emit('publish', command.channel, command.value);
     send(socket, response);
+  },
+
+  send: function (command, socket) {
+    nDataBroker.emit('message', command.value, function (err, data) {
+      var response = {
+        id: command.id,
+        type: 'response',
+        action: 'send',
+        value: data
+      };
+      if (err) {
+        response.error = err;
+      }
+      send(socket, response);
+    });
   }
 };
 
