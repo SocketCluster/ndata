@@ -14,16 +14,8 @@ var INIT_CONTROLLER_PATH = args.initControllerPath || null;
 var DOWNGRADE_TO_USER = args.downgradeToUser;
 var PROCESS_TERM_TIMEOUT = args.processTermTimeout || 10000;
 var BROKER_OPTIONS = args.brokerOptions;
-
-var INIT_CONTROLLER;
-if (INIT_CONTROLLER_PATH != null) {
-    INIT_CONTROLLER = require(INIT_CONTROLLER_PATH);
-}
-
-var BROKER_CONTROLLER;
-if (BROKER_CONTROLLER_PATH != null) {
-  BROKER_CONTROLLER = require(BROKER_CONTROLLER_PATH);
-}
+var INIT_CONTROLLER = null;
+var BROKER_CONTROLLER = null;
 
 var EventEmitter = require('events').EventEmitter;
 
@@ -173,16 +165,24 @@ var nDataBroker = new Broker();
 errorDomain.add(nDataBroker);
 global.broker = nDataBroker;
 
-if (INIT_CONTROLLER) {
+// Create the controller instances now.
+// This is more symmetric to SocketCluster's worker cluster.
+
+if (INIT_CONTROLLER_PATH != null) {
+  INIT_CONTROLLER = require(INIT_CONTROLLER_PATH);
   errorDomain.run(function () {
     INIT_CONTROLLER.run(nDataBroker);
   });
 }
-
-if (BROKER_CONTROLLER) {
+if (BROKER_CONTROLLER_PATH != null) {
+  BROKER_CONTROLLER = require(BROKER_CONTROLLER_PATH);
   errorDomain.run(function () {
     BROKER_CONTROLLER.run(nDataBroker);
   });
+}
+
+
+if (BROKER_CONTROLLER) {
 }
 
 var actions = {
