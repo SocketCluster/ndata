@@ -174,15 +174,12 @@ if (INIT_CONTROLLER_PATH != null) {
     INIT_CONTROLLER.run(nDataBroker);
   });
 }
+
 if (BROKER_CONTROLLER_PATH != null) {
   BROKER_CONTROLLER = require(BROKER_CONTROLLER_PATH);
   errorDomain.run(function () {
     BROKER_CONTROLLER.run(nDataBroker);
   });
-}
-
-
-if (BROKER_CONTROLLER) {
 }
 
 var actions = {
