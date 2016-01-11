@@ -1,6 +1,8 @@
 nData
 ======
 
+**Note that this repo has been deprecated and replaced with a new fork: https://github.com/SocketCluster/sc-broker**
+
 *nData* is a lightweight key-value store and message broker.
 It is written entirely in node.js for maximum portability.
 
